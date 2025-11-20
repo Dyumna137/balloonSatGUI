@@ -1,0 +1,1253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>929</width>
+    <height>761</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>600</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* ============================================
+   BALLOONSAT TELEMETRY DASHBOARD - LIGHT THEME
+   Clean • Bright • Laboratory Style
+   ============================================ */
+
+/* Main Window - Light Background */
+QMainWindow {
+    background-color: #f5f5f5;
+}
+
+QWidget {
+    background-color: #f5f5f5;
+    color: #222;
+    font-family: &quot;Segoe UI&quot;, sans-serif;
+    font-size: 11px;
+}
+
+/* ============================================
+   GROUP BOXES
+   ============================================ */
+
+QGroupBox {
+    background-color: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    margin-top: 8px;
+    padding: 12px 8px 8px 8px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 6px;
+    color: #555;
+    background-color: #f5f5f5;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+QPushButton {
+    background-color: #e6e6e6;
+    color: #222;
+    border: 1px solid #b7b7b7;
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #dadada;
+    border: 1px solid #a8a8a8;
+    color: #000;
+}
+
+QPushButton:pressed {
+    background-color: #cfcfcf;
+}
+
+/* ============================================
+   TABLES - Light, Clean
+   ============================================ */
+
+QTableWidget {
+    background-color: #ffffff;
+    alternate-background-color: #f2f2f2;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    gridline-color: #dddddd;
+    color: #222;
+    selection-background-color: #bee1ff;
+    selection-color: #000;
+    font-size: 11px;
+}
+
+QTableWidget::item {
+    padding: 6px 10px;
+    border: none;
+}
+
+QTableWidget::item:hover {
+    background-color: #efefef;
+}
+
+QTableWidget::item:selected {
+    background-color: #bee1ff;
+}
+
+/* Table Headers */
+QHeaderView::section {
+    background-color: #eaeaea;
+    color: #444;
+    border: none;
+    border-bottom: 1px solid #cccccc;
+    border-right: 1px solid #e0e0e0;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QHeaderView::section:hover {
+    background-color: #dedede;
+}
+
+QHeaderView::section:first {
+    background-color: #eaeaea;
+}
+
+/* ============================================
+   PROGRESS BARS
+   ============================================ */
+
+QProgressBar {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 2px;
+    text-align: center;
+    color: #555;
+    height: 18px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+QProgressBar::chunk {
+    background-color: #0078d4;
+    border-radius: 1px;
+}
+
+/* ============================================
+   LABELS
+   ============================================ */
+
+QLabel {
+    color: #333;
+    background-color: transparent;
+    border: none;
+    font-size: 11px;
+}
+
+/* Sensor Name Labels */
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;BMP&quot;],
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;ESP32&quot;],
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;GPS&quot;],
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;MQ&quot;],
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;DHT&quot;],
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;MPU&quot;],
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;RTC&quot;] 
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;MAX6675&quot;]
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;LoRa&quot;]
+QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;BMS&quot;]  {
+    color: #222;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Status Dots */
+QLabel[text=&quot;●&quot;] {
+    font-size: 16px;
+}
+
+/* CPU/Memory Labels */
+QLabel[objectName*=&quot;CPU&quot;],
+QLabel[objectName*=&quot;Mem&quot;] {
+    color: #222;
+    font-size: 11px;
+}
+
+/* ============================================
+   SCROLLBARS
+   ============================================ */
+
+QScrollBar:vertical {
+    background: #f5f5f5;
+    width: 10px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #cccccc;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #bbbbbb;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: #f5f5f5;
+    height: 10px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background: #cccccc;
+    border-radius: 5px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #bbbbbb;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ============================================
+   STATUS BAR
+   ============================================ */
+
+QStatusBar {
+    background-color: #e9e9e9;
+    color: #666;
+    border-top: 1px solid #cccccc;
+    font-size: 9px;
+    padding: 3px 10px;
+}
+
+/* ============================================
+   MENU BAR
+   ============================================ */
+
+QMenuBar {
+    background-color: #f0f0f0;
+    color: #333;
+    border-bottom: 1px solid #cccccc;
+    padding: 2px;
+    font-size: 11px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+QMenuBar::item:selected {
+    background-color: #dcdcdc;
+    color: #000;
+}
+
+/* ============================================
+   DROPDOWN MENUS
+   ============================================ */
+
+QMenu {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 4px;
+    color: #222;
+    font-size: 11px;
+}
+
+QMenu::item {
+    padding: 6px 20px;
+    border-radius: 3px;
+}
+
+QMenu::item:selected {
+    background-color: #e6e6e6;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #cccccc;
+    margin: 4px 0;
+}
+
+/* ============================================
+   SENSOR STATUS COLORS
+   ============================================ */
+
+/* Green - Healthy */
+QLabel#lblBMPStatus,
+QLabel#lblESP32Status,
+QLabel#lblGPSStatus,
+QLabel#lblMPU6050Status,
+QLabel#lblDHT22Status,
+QLabel#lblRTCStatus {
+    color: #0b8f58;
+    font-size: 16px;
+}
+
+/* Red - Error */
+QLabel#lblMQ2Status,
+QLabel#lblMQ7Status {
+    color: #d7282f;
+    font-size: 16px;
+}
+
+/* Orange - Warning */
+QLabel#lblMQ131Status {
+    color: #d98b00;
+    font-size: 16px;
+}
+
+/* ============================================
+   INPUT FIELDS
+   ============================================ */
+
+QLineEdit {
+    background-color: #ffffff;
+    color: #222;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #0078d4;
+}
+
+/* ============================================
+   COMBO BOXES
+   ============================================ */
+
+QComboBox {
+    background-color: #ffffff;
+    color: #222;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+QComboBox:hover {
+    border: 1px solid #b7b7b7;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    selection-background-color: #d6eaff;
+    color: #222;
+}
+
+/* ============================================
+   CHECKBOXES
+   ============================================ */
+
+QCheckBox {
+    color: #333;
+    spacing: 8px;
+    font-size: 11px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    background-color: #ffffff;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #bbbbbb;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0078d4;
+    border: 1px solid #0078d4;
+}
+
+/* ============================================
+   TOOLTIPS
+   ============================================ */
+
+QToolTip {
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 10px;
+}
+
+/* ============================================
+   PLOT AREA
+   ============================================ */
+
+QWidget#trajectoryPlot,
+QWidget#altitudePlot,
+QWidget#cameraPreview {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+}</string>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>false</bool>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">/* ===== BASE WIDGET ===== */
+QWidget {
+    background-color: #f4f4f4;
+    color: #222;
+    font-family: &quot;Segoe UI&quot;, &quot;Arial&quot;;
+    font-size: 11pt;
+}
+
+/* ===== GROUP BOXES ===== */
+QGroupBox {
+    border: 1px solid #ccc;
+    margin-top: 6px;
+    border-radius: 3px;
+    padding-top: 10px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 4px;
+    color: #444;
+}
+
+/* ===== TABLES ===== */
+QTableView, QTableWidget {
+    gridline-color: #ddd;
+    background: #ffffff;
+    alternate-background-color: #f0f0f0;
+    selection-background-color: #b7d5f0; 
+    border: 1px solid #ccc;
+}
+
+QTableWidget::item, QTableView::item {
+    padding: 4px;
+}
+
+QHeaderView::section {
+    background: #e6e6e6;
+    color: #333;
+    padding: 3px;
+    border: 1px solid #ccc;
+}
+
+/* ===== BUTTONS ===== */
+QPushButton {
+    background: #f2f2f2;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #222;
+}
+
+QPushButton:hover {
+    background: #e8e8e8;
+}
+
+QPushButton:pressed {
+    background: #dcdcdc;
+}
+
+QPushButton:disabled {
+    background: #eeeeee;
+    color: #999;
+    border: 1px solid #ddd;
+}
+
+/* ===== SENSOR HEALTH INDICATORS ===== */
+QLabel.health-dot {
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    border-radius: 7px;
+    margin: 0px 3px;
+}
+
+/* Green - Working */
+QLabel#healthGreen {
+    background-color: #4CAF50;
+    border: none;
+    min-width: 14px;
+    max-width: 14px;
+    min-height: 14px;
+    max-height: 14px;
+    border-radius: 7px;
+}
+
+/* Red - Error */
+QLabel#healthRed {
+    background-color: #f44336;
+    border: none;
+    min-width: 14px;
+    max-width: 14px;
+    min-height: 14px;
+    max-height: 14px;
+    border-radius: 7px;
+}
+
+/* Transparent - Inactive/Not Working */
+QLabel#healthInactive {
+    background-color: transparent;
+    border: 1px solid #aaa;
+    min-width: 14px;
+    max-width: 14px;
+    min-height: 14px;
+    max-height: 14px;
+    border-radius: 7px;
+}
+
+/* Sensor name labels */
+QLabel.sensor-name {
+    color: #555;
+    font-size: 10pt;
+    padding: 0px 3px;
+}
+
+/* ===== PROGRESS BARS (CPU/Memory) ===== */
+QProgressBar {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #ffffff;
+    text-align: center;
+    color: #333;
+    height: 22px;
+}
+
+QProgressBar::chunk {
+    background-color: #4aa3ff;
+    border-radius: 2px;
+}
+
+/* ===== LABELS ===== */
+QLabel {
+    color: #222;
+    background: transparent;
+}
+
+QLabel#parameterLabel {
+    color: #666;
+}
+
+QLabel#valueLabel {
+    color: #111;
+}
+
+QLabel#titleLabel {
+    color: #111;
+    font-weight: bold;
+}
+
+/* ===== PLOT/CHART WIDGETS ===== */
+QWidget#plotWidget {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+/* ===== CAMERA PREVIEW ===== */
+QLabel#cameraPreview {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+/* ===== SCROLLBAR ===== */
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+    width: 10px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #bbb;
+    min-height: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #999;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #f0f0f0;
+    height: 10px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #bbb;
+    min-width: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #999;
+}
+
+/* ===== LINE EDIT ===== */
+QLineEdit {
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 4px;
+    color: #222;
+    selection-background-color: #b7d5f0;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4aa3ff;
+}
+
+/* ===== COMBO BOX ===== */
+QComboBox {
+    background: #f2f2f2;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    padding: 4px;
+    color: #222;
+}
+
+QComboBox:hover {
+    background: #ebebeb;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox QAbstractItemView {
+    background: #ffffff;
+    border: 1px solid #ccc;
+    selection-background-color: #b7d5f0;
+    color: #222;
+}
+
+/* ===== SPLITTER ===== */
+QSplitter::handle {
+    background: #ccc;
+}
+
+QSplitter::handle:horizontal {
+    width: 2px;
+}
+
+QSplitter::handle:vertical {
+    height: 2px;
+}
+
+QSplitter::handle:hover {
+    background: #bbb;
+}
+
+/* ===== TOOLTIP ===== */
+QToolTip {
+    background: #f2f2f2;
+    border: 1px solid #999;
+    color: #222;
+    padding: 4px;
+    border-radius: 3px;
+}
+
+/* ===== MENU BAR ===== */
+QMenuBar {
+    background: #e8e8e8;
+    color: #222;
+    border-bottom: 1px solid #ccc;
+}
+
+QMenuBar::item:selected {
+    background: #b7d5f0;
+}
+
+QMenu {
+    background: #ffffff;
+    border: 1px solid #ccc;
+    color: #222;
+}
+
+QMenu::item:selected {
+    background: #b7d5f0;
+}
+
+/* ===== STATUS BAR ===== */
+QStatusBar {
+    background: #f0f0f0;
+    color: #666;
+    border-top: 1px solid #ccc;
+}
+</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_main" stretch="2,2,3">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
+      <property name="bottomMargin">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QGroupBox" name="telemetryGroup">
+        <property name="mouseTracking">
+         <bool>false</bool>
+        </property>
+        <property name="tabletTracking">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="title">
+         <string>Telemetry</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QTableView" name="telemetryTable">
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <property name="sizeAdjustPolicy">
+            <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="controlWidgetGroup">
+        <property name="title">
+         <string>Controls &amp; Sensors</string>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,2,1,4">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>5</number>
+         </property>
+         <property name="topMargin">
+          <number>5</number>
+         </property>
+         <property name="rightMargin">
+          <number>5</number>
+         </property>
+         <property name="bottomMargin">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QGroupBox" name="controlsGroup">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>100</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Controls</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0">
+            <property name="leftMargin">
+             <number>2</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>2</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="QPushButton" name="startButton">
+              <property name="text">
+               <string>Start Stream</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="stopButton">
+              <property name="text">
+               <string>Stop Stream</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="clearButton">
+              <property name="text">
+               <string>Clear Trajectory</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="cameraButton">
+              <property name="text">
+               <string>Open Camera</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="sensorsHealthGroup">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>120</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">/* ===== STATUS INDICATOR DOTS ===== */
+
+/* Base style - Gray/Inactive (default) */
+QLabel[objectName$=&quot;Indicator&quot;] {
+    color: #6a6a6a;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 0px;
+    margin: 0px;
+    min-width: 20px;
+    max-width: 20px;
+}
+
+/* 🟢 GREEN - Healthy/OK */
+QLabel[objectName$=&quot;Indicator&quot;][status=&quot;ok&quot;] {
+    color: #4CAF50;
+}
+
+/* 🟠 AMBER - Warning */
+QLabel[objectName$=&quot;Indicator&quot;][status=&quot;warning&quot;] {
+    color: #FFC107;
+}
+
+/* 🔴 RED - Error/Fault */
+QLabel[objectName$=&quot;Indicator&quot;][status=&quot;error&quot;] {
+    color: #F44336;
+}
+
+/* ⚪ GRAY - Inactive */
+QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
+    color: #6a6a6a;
+}</string>
+           </property>
+           <property name="title">
+            <string>Sensors Health</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="1" column="0">
+             <widget class="QLabel" name="mpu6050Label">
+              <property name="text">
+               <string>MPU6050</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="5">
+             <widget class="StatusLED" name="mq131Indicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="2">
+             <widget class="QLabel" name="mq7Label">
+              <property name="text">
+               <string>MQ7</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="3">
+             <widget class="QLabel" name="loRaIndicator">
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="StatusLED" name="mpu6050Indicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLabel" name="gpsLabel">
+              <property name="text">
+               <string>GPS</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="StatusLED" name="bmpIndicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="4">
+             <widget class="QLabel" name="bmslabel">
+              <property name="text">
+               <string>BMS</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLabel" name="max6675Indicator">
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="5">
+             <widget class="QLabel" name="bmsIndicator">
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="max6675Label">
+              <property name="text">
+               <string>MAX6675</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="5">
+             <widget class="StatusLED" name="rtcIndicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="StatusLED" name="dht22Indicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="4">
+             <widget class="QLabel" name="mq2Label">
+              <property name="text">
+               <string>MQ2</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLabel" name="esp32Label">
+              <property name="text">
+               <string>ESP32</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="StatusLED" name="esp32Indicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="3">
+             <widget class="StatusLED" name="mq7Indicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="StatusLED" name="gpsIndicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="dht22Label">
+              <property name="text">
+               <string>DHT22</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="bmpLabel">
+              <property name="text">
+               <string>BMP</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="4">
+             <widget class="QLabel" name="rtcLabel">
+              <property name="text">
+               <string>RTC</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="2">
+             <widget class="QLabel" name="LoRaLabel">
+              <property name="text">
+               <string>LoRa</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="5">
+             <widget class="StatusLED" name="mq2Indicator">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>●</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="4">
+             <widget class="QLabel" name="mq131Label">
+              <property name="text">
+               <string>MQ131</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="computerHealthGroup">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>120</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Computer Health</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <property name="spacing">
+               <number>20</number>
+              </property>
+              <property name="leftMargin">
+               <number>8</number>
+              </property>
+              <property name="topMargin">
+               <number>12</number>
+              </property>
+              <property name="rightMargin">
+               <number>8</number>
+              </property>
+              <property name="bottomMargin">
+               <number>8</number>
+              </property>
+              <item>
+               <widget class="LinearGauge" name="cpuGaugeWidget" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>80</width>
+                  <height>80</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="LinearGauge" name="memGaugeWidget" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>80</width>
+                  <height>80</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="latestReadingsGroup">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Latest Readings</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="QTableView" name="latestReadingsTable">
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="sortingEnabled">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="trajectoryGroup">
+        <property name="title">
+         <string>Trajectory (Expected vs Actual)</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="TrajectoryCharts" name="trajectoryChartsWidget" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>929</width>
+     <height>30</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>StatusLED</class>
+   <extends>QLabel</extends>
+   <header location="global">widgets.status_led</header>
+  </customwidget>
+  <customwidget>
+   <class>TrajectoryCharts</class>
+   <extends>QWidget</extends>
+   <header location="global">widgets.charts</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LinearGauge</class>
+   <extends>QWidget</extends>
+   <header location="global">widgets.gauge</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

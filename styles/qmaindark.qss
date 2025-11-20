@@ -1,0 +1,399 @@
+/* ============================================
+   BALLOONSAT TELEMETRY DASHBOARD
+   Original Design - Clean & Professional
+   ============================================ */
+
+/* Main Window - Dark Background */
+QMainWindow {
+    background-color: #1a1a1a;
+}
+
+QWidget {
+    background-color: #1a1a1a;
+    color: #d4d4d4;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 11px;
+}
+
+/* ============================================
+   GROUP BOXES - Simple Gray Titles
+   ============================================ */
+
+QGroupBox {
+    background-color: transparent;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    margin-top: 8px;
+    padding: 12px 8px 8px 8px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 6px;
+    color: #b0b0b0;
+    background-color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* ============================================
+   BUTTONS - Gray Style from Screenshot
+   ============================================ */
+
+QPushButton {
+    background-color: #2d2d2d;
+    color: #d4d4d4;
+    border: 1px solid #404040;
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #363636;
+    border: 1px solid #4a4a4a;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #242424;
+}
+
+/* ============================================
+   TABLES - Clean Dark Style
+   ============================================ */
+
+QTableWidget {
+    background-color: #1e1e1e;
+    alternate-background-color: #212121;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    gridline-color: #2a2a2a;
+    color: #d4d4d4;
+    selection-background-color: #404040;
+    selection-color: #ffffff;
+    font-size: 11px;
+}
+
+QTableWidget::item {
+    padding: 6px 10px;
+    border: none;
+}
+
+QTableWidget::item:hover {
+    background-color: #262626;
+}
+
+QTableWidget::item:selected {
+    background-color: #404040;
+}
+
+/* Table Headers - Clean Gray */
+QHeaderView::section {
+    background-color: #242424;
+    color: #b0b0b0;
+    border: none;
+    border-bottom: 1px solid #333333;
+    border-right: 1px solid #2a2a2a;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QHeaderView::section:hover {
+    background-color: #2a2a2a;
+}
+
+/* Remove row numbers column header */
+QHeaderView::section:first {
+    background-color: #242424;
+}
+
+/* ============================================
+   PROGRESS BARS - Blue Bars
+   ============================================ */
+
+QProgressBar {
+    background-color: #242424;
+    border: 1px solid #333333;
+    border-radius: 2px;
+    text-align: center;
+    color: #b0b0b0;
+    height: 18px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+QProgressBar::chunk {
+    background-color: #0078d4;
+    border-radius: 1px;
+}
+
+/* ============================================
+   LABELS - Clear Readable Text
+   ============================================ */
+
+QLabel {
+    color: #c8c8c8;
+    background-color: transparent;
+    border: none;
+    font-size: 11px;
+}
+
+/* Sensor Name Labels */
+QLabel[objectName*="lbl"][objectName*="BMP"],
+QLabel[objectName*="lbl"][objectName*="ESP32"],
+QLabel[objectName*="lbl"][objectName*="GPS"],
+QLabel[objectName*="lbl"][objectName*="MQ"],
+QLabel[objectName*="lbl"][objectName*="DHT"],
+QLabel[objectName*="lbl"][objectName*="MPU"],
+QLabel[objectName*="lbl"][objectName*="RTC"] {
+    color: #d4d4d4;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Status Dots - Clean Circles */
+QLabel[text="●"] {
+    font-size: 16px;
+}
+
+/* CPU/Memory Labels */
+QLabel[objectName*="CPU"],
+QLabel[objectName*="Mem"] {
+    color: #d4d4d4;
+    font-size: 11px;
+}
+
+/* ============================================
+   SCROLLBARS - Subtle Gray
+   ============================================ */
+
+QScrollBar:vertical {
+    background: #1a1a1a;
+    width: 10px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #333333;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #404040;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: #1a1a1a;
+    height: 10px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background: #333333;
+    border-radius: 5px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #404040;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ============================================
+   STATUS BAR - Dark Bottom Bar
+   ============================================ */
+
+QStatusBar {
+    background-color: #141414;
+    color: #808080;
+    border-top: 1px solid #2a2a2a;
+    font-size: 9px;
+    padding: 3px 10px;
+}
+
+/* ============================================
+   MENU BAR - Top Menu
+   ============================================ */
+
+QMenuBar {
+    background-color: #1a1a1a;
+    color: #b0b0b0;
+    border-bottom: 1px solid #2a2a2a;
+    padding: 2px;
+    font-size: 11px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+QMenuBar::item:selected {
+    background-color: #2d2d2d;
+    color: #d4d4d4;
+}
+
+/* ============================================
+   DROPDOWN MENUS
+   ============================================ */
+
+QMenu {
+    background-color: #242424;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    padding: 4px;
+    color: #d4d4d4;
+    font-size: 11px;
+}
+
+QMenu::item {
+    padding: 6px 20px;
+    border-radius: 3px;
+}
+
+QMenu::item:selected {
+    background-color: #2d2d2d;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #333333;
+    margin: 4px 0;
+}
+
+/* ============================================
+   SENSOR STATUS DOTS - Bright Colors
+   ============================================ */
+
+/* Green - Healthy (BMP, ESP32, GPS, DHT22, RTC) */
+QLabel#lblBMPStatus,
+QLabel#lblESP32Status,
+QLabel#lblGPSStatus,
+QLabel#lblMPU6050Status,
+QLabel#lblDHT22Status,
+QLabel#lblRTCStatus {
+    color: #10b981;
+    font-size: 16px;
+}
+
+/* Red - Error (MQ2, MQ7) */
+QLabel#lblMQ2Status,
+QLabel#lblMQ7Status {
+    color: #ef4444;
+    font-size: 16px;
+}
+
+/* Orange - Warning (MQ131) */
+QLabel#lblMQ131Status {
+    color: #f59e0b;
+    font-size: 16px;
+}
+
+/* ============================================
+   INPUT FIELDS
+   ============================================ */
+
+QLineEdit {
+    background-color: #242424;
+    color: #d4d4d4;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #0078d4;
+}
+
+/* ============================================
+   COMBO BOXES
+   ============================================ */
+
+QComboBox {
+    background-color: #242424;
+    color: #d4d4d4;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+QComboBox:hover {
+    border: 1px solid #404040;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #242424;
+    border: 1px solid #333333;
+    selection-background-color: #2d2d2d;
+    color: #d4d4d4;
+}
+
+/* ============================================
+   CHECKBOXES
+   ============================================ */
+
+QCheckBox {
+    color: #c8c8c8;
+    spacing: 8px;
+    font-size: 11px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    background-color: #242424;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #404040;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0078d4;
+    border: 1px solid #0078d4;
+}
+
+/* ============================================
+   TOOLTIPS
+   ============================================ */
+
+QToolTip {
+    background-color: #242424;
+    color: #d4d4d4;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 10px;
+}
+
+/* ============================================
+   PLOT AREA (For Matplotlib Canvas)
+   ============================================ */
+
+QWidget#trajectoryPlot,
+QWidget#altitudePlot,
+QWidget#cameraPreview {
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    border-radius: 4px;
+}

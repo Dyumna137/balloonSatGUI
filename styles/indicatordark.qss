@@ -1,0 +1,32 @@
+/* ===== STATUS INDICATOR DOTS ===== */
+
+/* Base style - Gray/Inactive (default) */
+QLabel[objectName$="Indicator"] {
+    color: #6a6a6a;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 0px;
+    margin: 0px;
+    min-width: 20px;
+    max-width: 20px;
+}
+
+/* 🟢 GREEN - Healthy/OK */
+QLabel[objectName$="Indicator"][status="ok"] {
+    color: #4CAF50;
+}
+
+/* 🟠 AMBER - Warning */
+QLabel[objectName$="Indicator"][status="warning"] {
+    color: #FFC107;
+}
+
+/* 🔴 RED - Error/Fault */
+QLabel[objectName$="Indicator"][status="error"] {
+    color: #F44336;
+}
+
+/* ⚪ GRAY - Inactive */
+QLabel[objectName$="Indicator"][status="inactive"] {
+    color: #6a6a6a;
+}

@@ -1,0 +1,61 @@
+QWidget {
+    background-color: #f0f0f0; /* Very light gray/off-white background */
+    color: #333333; /* Dark text color */
+    font-family: "Segoe UI", "Arial";
+    font-size: 11pt;
+}
+
+QGroupBox {
+    border: 1px solid #cccccc; /* Light gray border */
+    margin-top: 6px;
+    border-radius: 3px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 4px;
+    color: #666666; /* Slightly darker gray for the title */
+}
+
+QTableView {
+    gridline-color: #dddddd; /* Lighter grid lines */
+    background: #ffffff; /* White background for the table */
+    alternate-background-color: #f5f5f5; /* Very light alternate row color */
+    selection-background-color: #b3d4ff; /* Standard light blue selection */
+    color: #333333; /* Dark text for data */
+}
+
+QHeaderView::section {
+    background: #e0e0e0; /* Light gray header background */
+    color: #333333; /* Dark header text */
+    padding: 3px;
+    border: 1px solid #cccccc; /* Light border */
+}
+
+QPushButton {
+    background: #ffffff; /* White button background */
+    border: 1px solid #aaaaaa; /* Medium gray border */
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #333333; /* Dark text */
+}
+
+QPushButton:hover {
+    background: #e6e6e6; /* Slightly darker on hover */
+}
+
+QPushButton:pressed {
+    background: #cccccc; /* Medium gray when pressed */
+    border-color: #999999; /* Slightly darker border when pressed */
+}
+/*====Promoted Widgets ====*/
+LinearGauge {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+}
+
+trajectoryCharts {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+}

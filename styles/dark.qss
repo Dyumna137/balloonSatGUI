@@ -1,0 +1,41 @@
+QWidget {
+    background-color: #111;
+    color: #ddd;
+    font-family: "Segoe UI", "Arial";
+    font-size: 11pt;
+}
+QGroupBox {
+    border: 1px solid #444;
+    margin-top: 6px;
+    border-radius: 3px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 4px;
+    color: #bbb;
+}
+QTableView {
+    gridline-color: #333;
+    background: #181818;
+    alternate-background-color: #202020;
+    selection-background-color: #264f78;
+}
+QHeaderView::section {
+    background: #222;
+    color: #ccc;
+    padding: 3px;
+    border: 1px solid #333;
+}
+QPushButton {
+    background: #222;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+QPushButton:hover {
+    background: #2d2d2d;
+}
+QPushButton:pressed {
+    background: #1b1b1b;
+}
