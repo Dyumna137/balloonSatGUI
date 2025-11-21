@@ -89,11 +89,11 @@ except ImportError:
 try:
     from widgets.charts import TrajectoryCharts
     from widgets.gauge import LinearGauge
-    from widgets.status_led import StatusLED
+    from widgets.status_led import StatusLED, IndicatorsManager
 except ImportError:
     from dashboardGUI.widgets.charts import TrajectoryCharts
     from dashboardGUI.widgets.gauge import LinearGauge
-    from dashboardGUI.widgets.status_led import StatusLED
+    from dashboardGUI.widgets.status_led import StatusLED, IndicatorsManager
 
 # ============================================================================
 # === IMPORTS: Data Models and Dispatcher ===
@@ -235,6 +235,15 @@ class BalloonSatDashboard(QMainWindow):
         # === Step 4: Find and store widget references ===
         # Uses WidgetFinder utility for organized widget access
         self._find_all_widgets()
+
+        # === Create IndicatorsManager to control UI indicators ===
+        # This discovers all widgets named '*Indicator' and lets the
+        # dashboard set their state centrally using legacy or new labels.
+        try:
+            self.indicators = IndicatorsManager(self)
+        except Exception:
+            # Keep dashboard robust if manager fails for any reason
+            self.indicators = None
         
         # === Step 5: Setup data models ===
         # Connect TelemetryTableModel to both table views
@@ -370,7 +379,7 @@ class BalloonSatDashboard(QMainWindow):
         # === Find sensor status LEDs (BalloonSat-specific) ===
         # Maps sensor IDs from metadata.py to their UI indicator widgets
         sensor_map = {
-            'bmp': 'bmpIndicator',          # BMP280 pressure/altitude sensor
+            'bmp': 'bmp180Indicator',          # BMP280 pressure/altitude sensor (UI object uses bmp180Indicator)
             'esp32': 'esp32Indicator',      # ESP32 microcontroller status
             'mq131': 'mq131Indicator',      # MQ131 ozone sensor
             'mpu': 'mpu6050Indicator',      # MPU6050 accelerometer/gyro
@@ -379,8 +388,30 @@ class BalloonSatDashboard(QMainWindow):
             'dht22': 'dht22Indicator',      # DHT22 temperature/humidity sensor
             'mq7': 'mq7Indicator',          # MQ7 carbon monoxide sensor
             'rtc': 'rtcIndicator',          # DS1302 real-time clock
+            'max6675': 'max6675Indicator',
+            'lora' : 'loRaIndicator',
+            'bms' : 'bmsIndicator',
         }
-        self.sensor_leds = finder.find_sensor_indicators(StatusLED, sensor_map)
+        # Instantiate IndicatorsManager once and use it as single source-of-truth
+        try:
+            self.indicators = IndicatorsManager(self)
+            # Build sensor_id -> widget mapping using the indicator object names
+            self.sensor_leds = {}
+            for sensor_id, obj_name in sensor_map.items():
+                w = self.indicators[obj_name]
+                if w is not None:
+                    self.sensor_leds[sensor_id] = w
+                else:
+                    # fallback: try to find the widget directly
+                    found = self.findChild(StatusLED, obj_name)
+                    if found is not None:
+                        self.sensor_leds[sensor_id] = found
+                    else:
+                        print(f"  ⚠️ Indicator widget not found for {sensor_id} -> {obj_name}")
+        except Exception:
+            # If manager fails, fall back to the finder (robust startup)
+            self.indicators = None
+            self.sensor_leds = finder.find_sensor_indicators(StatusLED, sensor_map)
         
         # === Store widget references for convenient access ===
         # Extract from finder dictionaries for easier access in methods

@@ -20,407 +20,174 @@
    <string>MainWindow</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">/* ============================================
-   BALLOONSAT TELEMETRY DASHBOARD - LIGHT THEME
-   Clean • Bright • Laboratory Style
-   ============================================ */
+   <string notr="true">/* ============================================================
+   GLOBAL UI THEME 
+   ------------------------------------------------------------
+   This theme keeps everything simple, modern, and consistent.
+   Only well-chosen colors and spacing; no clutter.
+   ============================================================ */
 
-/* Main Window - Light Background */
-QMainWindow {
-    background-color: #f5f5f5;
-}
 
+/* ===== ROOT WIDGET ===== */
 QWidget {
-    background-color: #f5f5f5;
-    color: #222;
-    font-family: &quot;Segoe UI&quot;, sans-serif;
-    font-size: 11px;
+    background-color: #f5f5f5;   /* soft grey background */
+    color: #222;                 /* dark readable text */
+    font-family: &quot;Segoe UI&quot;, Arial;
+    font-size: 11pt;
 }
 
-/* ============================================
-   GROUP BOXES
-   ============================================ */
 
+/* ===== GROUP BOXES ===== */
 QGroupBox {
-    background-color: transparent;
-    border: 1px solid #cccccc;
+    border: 1px solid #ccc;      /* subtle boundary */
     border-radius: 4px;
     margin-top: 8px;
-    padding: 12px 8px 8px 8px;
+    padding-top: 10px;
 }
 
 QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    left: 8px;
-    padding: 0 6px;
     color: #555;
-    background-color: #f5f5f5;
-    font-size: 11px;
-    font-weight: 500;
+    padding: 0 4px;
 }
 
-/* ============================================
-   BUTTONS
-   ============================================ */
 
-QPushButton {
-    background-color: #e6e6e6;
-    color: #222;
-    border: 1px solid #b7b7b7;
-    border-radius: 3px;
-    padding: 8px 16px;
-    font-size: 11px;
-    font-weight: 500;
+/* ===== TABLES ===== */
+QTableWidget, QTableView {
+    background: #fff;
+    border: 1px solid #ccc;
+    alternate-background-color: #f0f0f0;
+    selection-background-color: #b7d5f0; 
+    gridline-color: #ddd;
 }
 
-QPushButton:hover {
-    background-color: #dadada;
-    border: 1px solid #a8a8a8;
-    color: #000;
-}
-
-QPushButton:pressed {
-    background-color: #cfcfcf;
-}
-
-/* ============================================
-   TABLES - Light, Clean
-   ============================================ */
-
-QTableWidget {
-    background-color: #ffffff;
-    alternate-background-color: #f2f2f2;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    gridline-color: #dddddd;
-    color: #222;
-    selection-background-color: #bee1ff;
-    selection-color: #000;
-    font-size: 11px;
-}
-
-QTableWidget::item {
-    padding: 6px 10px;
-    border: none;
-}
-
-QTableWidget::item:hover {
-    background-color: #efefef;
-}
-
-QTableWidget::item:selected {
-    background-color: #bee1ff;
-}
-
-/* Table Headers */
 QHeaderView::section {
-    background-color: #eaeaea;
-    color: #444;
-    border: none;
-    border-bottom: 1px solid #cccccc;
-    border-right: 1px solid #e0e0e0;
-    padding: 6px 10px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-QHeaderView::section:hover {
-    background-color: #dedede;
-}
-
-QHeaderView::section:first {
-    background-color: #eaeaea;
-}
-
-/* ============================================
-   PROGRESS BARS
-   ============================================ */
-
-QProgressBar {
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    border-radius: 2px;
-    text-align: center;
-    color: #555;
-    height: 18px;
-    font-size: 10px;
-    font-weight: 600;
-}
-
-QProgressBar::chunk {
-    background-color: #0078d4;
-    border-radius: 1px;
-}
-
-/* ============================================
-   LABELS
-   ============================================ */
-
-QLabel {
-    color: #333;
-    background-color: transparent;
-    border: none;
-    font-size: 11px;
-}
-
-/* Sensor Name Labels */
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;BMP&quot;],
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;ESP32&quot;],
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;GPS&quot;],
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;MQ&quot;],
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;DHT&quot;],
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;MPU&quot;],
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;RTC&quot;] 
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;MAX6675&quot;]
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;LoRa&quot;]
-QLabel[objectName*=&quot;lbl&quot;][objectName*=&quot;BMS&quot;]  {
-    color: #222;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-/* Status Dots */
-QLabel[text=&quot;●&quot;] {
-    font-size: 16px;
-}
-
-/* CPU/Memory Labels */
-QLabel[objectName*=&quot;CPU&quot;],
-QLabel[objectName*=&quot;Mem&quot;] {
-    color: #222;
-    font-size: 11px;
-}
-
-/* ============================================
-   SCROLLBARS
-   ============================================ */
-
-QScrollBar:vertical {
-    background: #f5f5f5;
-    width: 10px;
-    border: none;
-}
-
-QScrollBar::handle:vertical {
-    background: #cccccc;
-    border-radius: 5px;
-    min-height: 30px;
-}
-
-QScrollBar::handle:vertical:hover {
-    background: #bbbbbb;
-}
-
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
-QScrollBar:horizontal {
-    background: #f5f5f5;
-    height: 10px;
-    border: none;
-}
-
-QScrollBar::handle:horizontal {
-    background: #cccccc;
-    border-radius: 5px;
-    min-width: 30px;
-}
-
-QScrollBar::handle:horizontal:hover {
-    background: #bbbbbb;
-}
-
-QScrollBar::add-line:horizontal,
-QScrollBar::sub-line:horizontal {
-    width: 0px;
-}
-
-/* ============================================
-   STATUS BAR
-   ============================================ */
-
-QStatusBar {
-    background-color: #e9e9e9;
-    color: #666;
-    border-top: 1px solid #cccccc;
-    font-size: 9px;
-    padding: 3px 10px;
-}
-
-/* ============================================
-   MENU BAR
-   ============================================ */
-
-QMenuBar {
-    background-color: #f0f0f0;
-    color: #333;
-    border-bottom: 1px solid #cccccc;
-    padding: 2px;
-    font-size: 11px;
-}
-
-QMenuBar::item {
-    background-color: transparent;
-    padding: 5px 10px;
-    border-radius: 3px;
-}
-
-QMenuBar::item:selected {
-    background-color: #dcdcdc;
-    color: #000;
-}
-
-/* ============================================
-   DROPDOWN MENUS
-   ============================================ */
-
-QMenu {
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
+    background: #e6e6e6;
+    border: 1px solid #ccc;
     padding: 4px;
+}
+
+
+/* ===== BUTTONS ===== */
+QPushButton {
+    background: #f2f2f2;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+
+QPushButton:hover { background: #e8e8e8; }
+QPushButton:pressed { background: #dcdcdc; }
+QPushButton:disabled {
+    background: #eaeaea;
+    color: #999;
+}
+
+
+/* ===== LABELS ===== */
+QLabel {
+    background: transparent;
     color: #222;
-    font-size: 11px;
 }
 
-QMenu::item {
-    padding: 6px 20px;
-    border-radius: 3px;
+QLabel#titleLabel {
+    font-weight: bold;
+    color: #111;
 }
 
-QMenu::item:selected {
-    background-color: #e6e6e6;
-}
 
-QMenu::separator {
-    height: 1px;
-    background: #cccccc;
-    margin: 4px 0;
-}
-
-/* ============================================
-   SENSOR STATUS COLORS
-   ============================================ */
-
-/* Green - Healthy */
-QLabel#lblBMPStatus,
-QLabel#lblESP32Status,
-QLabel#lblGPSStatus,
-QLabel#lblMPU6050Status,
-QLabel#lblDHT22Status,
-QLabel#lblRTCStatus {
-    color: #0b8f58;
-    font-size: 16px;
-}
-
-/* Red - Error */
-QLabel#lblMQ2Status,
-QLabel#lblMQ7Status {
-    color: #d7282f;
-    font-size: 16px;
-}
-
-/* Orange - Warning */
-QLabel#lblMQ131Status {
-    color: #d98b00;
-    font-size: 16px;
-}
-
-/* ============================================
-   INPUT FIELDS
-   ============================================ */
-
+/* ===== TEXT INPUTS ===== */
 QLineEdit {
-    background-color: #ffffff;
-    color: #222;
-    border: 1px solid #cccccc;
+    background: #fff;
+    border: 1px solid #ccc;
     border-radius: 3px;
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 4px;
 }
 
 QLineEdit:focus {
-    border: 1px solid #0078d4;
+    border-color: #4aa3ff;
 }
 
-/* ============================================
-   COMBO BOXES
-   ============================================ */
 
+/* ===== COMBO BOXES ===== */
 QComboBox {
-    background-color: #ffffff;
-    color: #222;
-    border: 1px solid #cccccc;
+    background: #f2f2f2;
+    border: 1px solid #bbb;
     border-radius: 3px;
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 4px;
 }
 
-QComboBox:hover {
-    border: 1px solid #b7b7b7;
-}
-
+QComboBox:hover { background: #ebebeb; }
 QComboBox QAbstractItemView {
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    selection-background-color: #d6eaff;
-    color: #222;
+    background: #fff;
+    border: 1px solid #ccc;
+    selection-background-color: #b7d5f0;
 }
 
-/* ============================================
-   CHECKBOXES
-   ============================================ */
 
-QCheckBox {
-    color: #333;
-    spacing: 8px;
-    font-size: 11px;
+/* ===== SCROLLBARS ===== */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #f0f0f0;
+    border: none;
 }
 
-QCheckBox::indicator {
-    width: 16px;
-    height: 16px;
-    border: 1px solid #cccccc;
-    border-radius: 3px;
-    background-color: #ffffff;
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #bbb;
+    border-radius: 5px;
 }
 
-QCheckBox::indicator:hover {
-    border: 1px solid #bbbbbb;
+QScrollBar::handle:hover { background: #999; }
+
+
+/* ===== MENU &amp; STATUS BAR ===== */
+QMenuBar {
+    background: #e8e8e8;
+    border-bottom: 1px solid #ccc;
 }
 
-QCheckBox::indicator:checked {
-    background-color: #0078d4;
-    border: 1px solid #0078d4;
+QMenuBar::item:selected {
+    background: #b7d5f0;
 }
 
-/* ============================================
-   TOOLTIPS
-   ============================================ */
-
-QToolTip {
-    background-color: #ffffff;
-    color: #333;
-    border: 1px solid #cccccc;
-    border-radius: 3px;
-    padding: 6px 10px;
-    font-size: 10px;
+QMenu {
+    background: #fff;
+    border: 1px solid #ccc;
 }
 
-/* ============================================
-   PLOT AREA
-   ============================================ */
+QMenu::item:selected {
+    background: #b7d5f0;
+}
 
-QWidget#trajectoryPlot,
-QWidget#altitudePlot,
-QWidget#cameraPreview {
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-}</string>
+QStatusBar {
+    background: #efefef;
+    border-top: 1px solid #ccc;
+}
+
+
+/* ============================================================
+   STATUS LED INDICATORS — Clean Circle Style
+   ------------------------------------------------------------
+   These widgets override QLabel rules and stay perfectly round.
+   Controlled using the dynamic &quot;status&quot; property:
+       inactive / ok / warning / error
+   ============================================================ */
+
+StatusLED {
+    all: unset;                      /* reset inherited QLabel styling */
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    border-radius: 9px;              /* perfect circle */
+    background-color: transparent;
+    border: 1px solid #aaa;          /* inactive */
+}
+
+/* color states */
+StatusLED[status=&quot;ok&quot;]       { background-color: #4CAF50; border: none; }
+StatusLED[status=&quot;warning&quot;]  { background-color: #FFC107; border: none; }
+StatusLED[status=&quot;error&quot;]    { background-color: #F44336; border: none; }
+StatusLED[status=&quot;inactive&quot;] { background-color: transparent; border: 1px solid #aaa; }
+</string>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>false</bool>
@@ -723,6 +490,19 @@ QStatusBar {
     color: #666;
     border-top: 1px solid #ccc;
 }
+
+/* ===== PROTECT CUSTOM StatusLED FROM GENERIC QLabel RULES ===== */
+
+StatusLED {
+    all: unset;
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    border-radius: 9px;
+    background-color: transparent;
+    border: 1px solid #aaa;
+}
 </string>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -874,41 +654,54 @@ QStatusBar {
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">/* ===== STATUS INDICATOR DOTS ===== */
+            <string notr="true">/* ==== UNIVERSAL STATUS LED STYLE ==== */
 
-/* Base style - Gray/Inactive (default) */
-QLabel[objectName$=&quot;Indicator&quot;] {
-    color: #6a6a6a;
-    font-size: 30px;
-    font-weight: bold;
-    padding: 0px;
-    margin: 0px;
-    min-width: 20px;
-    max-width: 20px;
+/* Base circle — applied to all indicators */
+StatusLED, *[objectName$=&quot;Indicator&quot;] {
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+
+     border-radius: 9px;     /* circular shape */
+     background-color: transparent; 
+     border: 1px solid #aaa;  /* default inactive */
+     margin: 0; 
+     padding: 0;
 }
 
-/* 🟢 GREEN - Healthy/OK */
-QLabel[objectName$=&quot;Indicator&quot;][status=&quot;ok&quot;] {
-    color: #4CAF50;
+/* 🟢 OK */
+StatusLED[status=&quot;ok&quot;], *[objectName$=&quot;Indicator&quot;][status=&quot;ok&quot;] {
+    background-color: #4CAF50;
+    border: none;
 }
 
-/* 🟠 AMBER - Warning */
-QLabel[objectName$=&quot;Indicator&quot;][status=&quot;warning&quot;] {
-    color: #FFC107;
+/* 🟠 WARNING */
+StatusLED[status=&quot;warning&quot;], *[objectName$=&quot;Indicator&quot;][status=&quot;warning&quot;] {
+    background-color: #FFC107;
+    border: none;
 }
 
-/* 🔴 RED - Error/Fault */
-QLabel[objectName$=&quot;Indicator&quot;][status=&quot;error&quot;] {
-    color: #F44336;
+/* 🔴 ERROR */
+StatusLED[status=&quot;error&quot;], *[objectName$=&quot;Indicator&quot;][status=&quot;error&quot;] {
+    background-color: #F44336;
+    border: none;
 }
 
-/* ⚪ GRAY - Inactive */
-QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
-    color: #6a6a6a;
-}</string>
+/* ⚪ INACTIVE */
+StatusLED[status=&quot;inactive&quot;], *[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
+    background-color: transparent;
+    border: 1px solid #aaa;
+}
+
+
+</string>
            </property>
            <property name="title">
             <string>Sensors Health</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="1" column="0">
@@ -920,11 +713,23 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
             </item>
             <item row="0" column="5">
              <widget class="StatusLED" name="mq131Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
@@ -935,20 +740,44 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
               </property>
              </widget>
             </item>
-            <item row="3" column="3">
-             <widget class="QLabel" name="loRaIndicator">
+            <item row="3" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
+             <widget class="StatusLED" name="loRaIndicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="1" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
              <widget class="StatusLED" name="mpu6050Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
@@ -960,33 +789,69 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="StatusLED" name="bmpIndicator">
+             <widget class="StatusLED" name="bmp180Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
             <item row="3" column="4">
-             <widget class="QLabel" name="bmslabel">
+             <widget class="QLabel" name="bmsLabel">
               <property name="text">
                <string>BMS</string>
               </property>
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QLabel" name="max6675Indicator">
+             <widget class="StatusLED" name="max6675Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
             <item row="3" column="5">
-             <widget class="QLabel" name="bmsIndicator">
+             <widget class="StatusLED" name="bmsIndicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
@@ -997,23 +862,47 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
               </property>
              </widget>
             </item>
-            <item row="2" column="5">
+            <item row="2" column="5" alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
              <widget class="StatusLED" name="rtcIndicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
             <item row="2" column="1">
              <widget class="StatusLED" name="dht22Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
@@ -1033,31 +922,67 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
             </item>
             <item row="0" column="3">
              <widget class="StatusLED" name="esp32Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
             <item row="2" column="3">
              <widget class="StatusLED" name="mq7Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
             <item row="1" column="3">
              <widget class="StatusLED" name="gpsIndicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
@@ -1069,9 +994,9 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
              </widget>
             </item>
             <item row="0" column="0">
-             <widget class="QLabel" name="bmpLabel">
+             <widget class="QLabel" name="bmp180Label">
               <property name="text">
-               <string>BMP</string>
+               <string>BMP180</string>
               </property>
              </widget>
             </item>
@@ -1083,19 +1008,31 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
              </widget>
             </item>
             <item row="3" column="2">
-             <widget class="QLabel" name="LoRaLabel">
+             <widget class="QLabel" name="loRaLabel">
               <property name="text">
-               <string>LoRa</string>
+               <string>LoRa Radio</string>
               </property>
              </widget>
             </item>
             <item row="1" column="5">
              <widget class="StatusLED" name="mq2Indicator">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>●</string>
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+              <property name="status" stdset="0">
+               <string>inactive</string>
               </property>
              </widget>
             </item>
@@ -1142,8 +1079,8 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
                <widget class="LinearGauge" name="cpuGaugeWidget" native="true">
                 <property name="minimumSize">
                  <size>
-                  <width>80</width>
-                  <height>80</height>
+                  <width>70</width>
+                  <height>70</height>
                  </size>
                 </property>
                </widget>
@@ -1152,8 +1089,8 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
                <widget class="LinearGauge" name="memGaugeWidget" native="true">
                 <property name="minimumSize">
                  <size>
-                  <width>80</width>
-                  <height>80</height>
+                  <width>70</width>
+                  <height>70</height>
                  </size>
                 </property>
                </widget>
@@ -1223,7 +1160,7 @@ QLabel[objectName$=&quot;Indicator&quot;][status=&quot;inactive&quot;] {
      <x>0</x>
      <y>0</y>
      <width>929</width>
-     <height>30</height>
+     <height>33</height>
     </rect>
    </property>
   </widget>

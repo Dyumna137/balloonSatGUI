@@ -78,7 +78,7 @@ License: MIT
 from __future__ import annotations
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QColor, QPen
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QSize, Qt, QObject
 
 # ============================================================================
 # === COLOR CONSTANTS (Cached for Performance) ===
@@ -285,6 +285,34 @@ class StatusLED(QWidget):
             • Allows Qt Designer to read back the property value
         """
         return self._text
+
+    # Qt Designer / uic compatibility: some .ui files set alignment on promoted
+    # widgets (originally QLabel). Provide a no-op setter so uic.loadUi can
+    # call `setAlignment()` without raising AttributeError.
+    def setAlignment(self, alignment):
+        """Compatibility shim for Qt Designer alignment property.
+
+        The StatusLED doesn't render text alignment, but Qt Designer may
+        set this property on promoted widgets. We store it optionally for
+        completeness and ignore it during painting.
+        """
+        try:
+            self._alignment = alignment
+        except Exception:
+            pass
+
+    # Some .ui files include a custom 'status' property. Provide a setter
+    # so uic.loadUi can set it (no-op behavior).
+    def setStatus(self, status: str):
+        """Compatibility shim for a 'status' property set in .ui files.
+
+        Accepts a string (e.g., 'inactive') and stores it internally but
+        does not affect visual state. Use `setState()` to change LED color.
+        """
+        try:
+            self._status_property = status
+        except Exception:
+            pass
     
     # ========================================================================
     # === State Management Methods ===
@@ -504,6 +532,165 @@ class StatusLED(QWidget):
         painter.drawEllipse(1, 1, d, d)
         
         # Painter automatically cleaned up when leaving scope (RAII pattern)
+
+
+# ---------------------------------------------------------------------------
+# Legacy helpers + IndicatorsManager
+# ---------------------------------------------------------------------------
+# Backwards-compatible helpers and a small manager class for working with
+# widgets named like '*Indicator' in the UI. These provide a convenient,
+# documented API for scripts and unit-tests to set indicator states and to
+# discover indicators automatically.
+
+def normalize_status_leds(parent_widget):
+    """
+    Backward-compatible helper.
+    Enforces size + alignment for all *Indicator widgets.
+    """
+    for w in parent_widget.findChildren(QWidget):
+        name = w.objectName()
+        if name and name.endswith("Indicator"):
+            w.setFixedSize(18, 18)
+            if hasattr(w, "setAlignment"):
+                w.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+
+def set_indicator(parent_ui, widget_or_name, state):
+    """
+    Legacy helper:
+    Sets a single indicator to 'ok', 'warning', 'error', 'inactive'.
+    """
+    if isinstance(widget_or_name, str):
+        # prefer QWidget lookup (more specific) when searching UI
+        w = parent_ui.findChild(QWidget, widget_or_name)
+    else:
+        w = widget_or_name
+
+    if w is None:
+        return False
+
+    w.setProperty("status", state)
+
+    # force style update
+    w.style().unpolish(w)
+    w.style().polish(w)
+    w.update()
+    return True
+
+
+class IndicatorsManager:
+    """
+    New clean system for indicator management.
+
+    Features:
+        • auto-discovery of all widgets ending with "Indicator"
+        • consistent size/alignment enforcement
+        • indicator.set(name, state)
+        • indicator.set_all(state)
+        • dictionary-like access: manager["gpsIndicator"]
+    """
+
+    # Accept both legacy labels and the StatusLED internal labels.
+    # Legacy labels: ok, warning, error, inactive
+    # StatusLED labels: on, off, fault
+    STATE_MAPPING = {
+        "ok": "on",
+        "inactive": "off",
+        "error": "fault",
+        "warning": "fault",
+        # allow mapping from same names to themselves
+        "on": "on",
+        "off": "off",
+        "fault": "fault",
+    }
+
+    VALID_STATES = set(STATE_MAPPING.keys())
+
+    def __init__(self, parent_ui):
+        self.ui = parent_ui
+        self.indicators = {}
+        self._discover()
+
+    # ---------------------------------------------------------
+
+    def _discover(self):
+        """Find all widgets with names ending in 'Indicator'."""
+        for w in self.ui.findChildren(QWidget):
+            name = w.objectName()
+            if name and name.endswith("Indicator"):
+                # enforce physical formatting
+                w.setFixedSize(18, 18)
+                if hasattr(w, "setAlignment"):
+                    w.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+                self.indicators[name] = w
+
+    # ---------------------------------------------------------
+
+    def set(self, target, state):
+        """Set a specific indicator's state."""
+        if state not in self.VALID_STATES:
+            raise ValueError(f"Invalid state '{state}'. Valid: {self.VALID_STATES}")
+
+        # translate legacy state names to StatusLED names
+        mapped = self.STATE_MAPPING.get(state, state)
+
+        if isinstance(target, str):
+            w = self.indicators.get(target)
+        else:
+            w = target
+
+        if not w:
+            return False
+
+        # store status property (legacy UIs may read this property)
+        w.setProperty("status", state)
+
+        # If the widget supports setState (StatusLED), call it with mapped value
+        if hasattr(w, "setState"):
+            try:
+                w.setState(mapped)
+            except Exception:
+                # If setState fails, keep using the property-based approach
+                pass
+
+        w.style().unpolish(w)
+        w.style().polish(w)
+        w.update()
+
+        return True
+
+    # ---------------------------------------------------------
+
+    def set_all(self, state):
+        """Set all indicators to the same state."""
+        if state not in self.VALID_STATES:
+            raise ValueError(f"Invalid state '{state}'. Valid: {self.VALID_STATES}")
+
+        mapped = self.STATE_MAPPING.get(state, state)
+        for w in self.indicators.values():
+            w.setProperty("status", state)
+            if hasattr(w, "setState"):
+                try:
+                    w.setState(mapped)
+                except Exception:
+                    pass
+            w.style().unpolish(w)
+            w.style().polish(w)
+            w.update()
+
+    # ---------------------------------------------------------
+
+    def names(self):
+        """Return list of all discovered indicator names."""
+        return list(self.indicators.keys())
+
+    # ---------------------------------------------------------
+
+    def __getitem__(self, name):
+        """Allow dictionary-like access."""
+        return self.indicators.get(name)
+
 
 
 # ============================================================================

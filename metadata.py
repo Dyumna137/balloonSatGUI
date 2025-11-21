@@ -204,20 +204,33 @@ class SensorDef:
 # ============================================================================
 
 TELEMETRY_FIELDS: list[TelemetryField] = [
-    # === ALTITUDE MEASUREMENTS ===
-    # Three independent altitude sources for redundancy and comparison
-    
+
+    # ======================================================================
+    # === ALTITUDE & ATMOSPHERIC MEASUREMENT ===============================
+    # Sensors: BMP280 (pressure+altitude), GPS
+    # Purpose: Track balloon ascent/descent, detect burst, analyze atmosphere
+    # ======================================================================
+
     TelemetryField(
         id="alt_bmp",
-        label="Altitude (BMP)",
+        label="Altitude (BMP280)",
         unit="m",
         fmt="{:.1f}",
         source_key="alt_bmp"
     ),
-    # BMP280 barometric pressure sensor
-    # Primary altitude measurement, very accurate
-    # Range: -500m to 9000m, Accuracy: ±1m
-    
+    # Barometric altitude from BMP280
+    # Range: -500m to 9000m; accuracy: ±1m
+
+    TelemetryField(
+        id="pressure_bmp",
+        label="Pressure (BMP280)",
+        unit="Pa",
+        fmt="{:.0f}",
+        source_key="pressure_bmp"
+    ),
+    # Atmospheric pressure
+    # Range: 30000–110000 Pa; used for altitude & weather modeling
+
     TelemetryField(
         id="alt_gps",
         label="Altitude (GPS)",
@@ -225,60 +238,65 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
         fmt="{:.1f}",
         source_key="alt_gps"
     ),
-    # GPS module altitude (from satellites)
-    # Less accurate than barometric but provides absolute reference
-    # Range: 0m to 18000m, Accuracy: ±5-10m
-    
+    # Satellite-derived altitude
+    # Less accurate than barometric; used as absolute reference
+
     TelemetryField(
         id="alt_6m",
-        label="Altitude (6M)",
+        label="Altitude (6-min Avg)",
         unit="m",
         fmt="{:.1f}",
         source_key="alt_6m"
     ),
-    # Six-minute averaged altitude (smoothed)
-    # Used for long-term trend analysis
-    
-    # === ATMOSPHERIC MEASUREMENTS ===
-    
+    # Long-term smoothed altitude for trend analysis
+
+
+
+    # ======================================================================
+    # === ENVIRONMENTAL TEMPERATURES =======================================
+    # Sensors: MAX6675, BMP280 internal temp, DHT22
+    # Purpose: Study thermal environment & electronics temperature
+    # ======================================================================
+
     TelemetryField(
-        id="pressure_bmp",
-        label="Pressure (BMP)",
-        unit="Pa",
-        fmt="{:.0f}",
-        source_key="pressure"
+        id="temp_tc",
+        label="Temp (MAX6675)",
+        unit="°C",
+        fmt="{:.1f}",
+        source_key="temp_tc"
     ),
-    # Atmospheric pressure from BMP280
-    # Used for altitude calculation and weather analysis
-    # Range: 30000-110000 Pa, Resolution: 0.16 Pa
-    
-    # === MOTION MEASUREMENTS ===
-    
+    # MAX6675 K-type thermocouple
+    # Range: 0°C to 1024°C
+    # Useful for high-temp surfaces or insulated payload interior
+
     TelemetryField(
-        id="speed",
-        label="Speed (MPU6050)",
-        unit="m/s",
+        id="temp_bmp",
+        label="Temp (BMP280)",
+        unit="°C",
         fmt="{:.2f}",
-        source_key="speed"
+        source_key="temp_bmp"
     ),
-    # Calculated from MPU6050 accelerometer
-    # Derived speed (not GPS speed)
-    # Useful for detecting rapid movements
-    
-    # === ENVIRONMENTAL MEASUREMENTS ===
-    
+    # BMP280 internal temperature (for compensation)
+    # Also environmental temp but slower responding
+
     TelemetryField(
-        id="temp",
+        id="temp_dht",
         label="Temp (DHT22)",
         unit="°C",
         fmt="{:.1f}",
-        source_key="temp"
+        source_key="temp_dht"
     ),
-    # DHT22 temperature sensor
-    # Range: -40°C to 80°C, Accuracy: ±0.5°C
-    
-    # === GAS CONCENTRATION MEASUREMENTS ===
-    
+    # DHT22 ambient temperature
+    # Range: -40°C to 80°C; accuracy: ±0.5°C
+
+
+
+    # ======================================================================
+    # === GAS MEASUREMENTS ==================================================
+    # Sensors: MQ-7, MQ-131, MQ-2
+    # Purpose: Atmospheric chemistry research + safety detection
+    # ======================================================================
+
     TelemetryField(
         id="co",
         label="CO (MQ-7)",
@@ -286,10 +304,9 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
         fmt="{:.3f}",
         source_key="co"
     ),
-    # MQ-7 Carbon Monoxide sensor
-    # Range: 20-2000 ppm
-    # Safety: >50 ppm is concerning, >200 ppm is dangerous
-    
+    # Carbon Monoxide sensor
+    # Safety threshold: >50 ppm concerning, >200 ppm dangerous
+
     TelemetryField(
         id="o3",
         label="Ozone (MQ-131)",
@@ -297,59 +314,166 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
         fmt="{:.4f}",
         source_key="o3"
     ),
-    # MQ-131 Ozone sensor
-    # Range: 10 ppb - 2 ppm
-    # Atmospheric research sensor (stratospheric ozone detection)
-    
+    # Ozone concentration
+    # Range: 10 ppb–2 ppm; used for stratospheric ozone detection
+
     TelemetryField(
         id="flammable",
-        label="Flammable (MQ-2)",
+        label="Flammable Gas (MQ-2)",
         unit="ppm",
         fmt="{:.3f}",
         source_key="flammable"
     ),
-    # MQ-2 Flammable gas sensor
-    # Detects LPG, methane, propane, hydrogen
-    # Safety sensor for fuel leaks
-    
-    # === POSITION MEASUREMENT ===
-    
+    # Detects methane, propane, LPG, hydrogen
+    # Useful for leak detection in experiments
+
+
+
+    # ======================================================================
+    # === MOTION & DYNAMICS =================================================
+    # Sensors: MPU6050
+    # Purpose: Detect rapid movement, turbulence, acceleration events
+    # ======================================================================
+
+    TelemetryField(
+        id="speed",
+        label="Speed (MPU6050)",
+        unit="m/s",
+        fmt="{:.2f}",
+        source_key="speed"
+    ),
+    # Derived speed from accelerometer integration
+    # Useful for motion event detection (not actual GPS speed)
+
+
+
+    # ======================================================================
+    # === POSITION ==========================================================
+    # Sensors: GPS Module
+    # Purpose: Absolute position and tracking
+    # ======================================================================
+
     TelemetryField(
         id="gps",
-        label="GPS (lat,lon)",
+        label="GPS (lat, lon)",
         unit="",
         fmt="{:.6f}, {:.6f}",
         source_key="gps_latlon"
     ),
-    # GPS coordinates as (latitude, longitude) tuple
-    # Format: 6 decimal places (~0.1m precision)
-    # Expected data: tuple of (float, float)
-    
-    # === TIME MEASUREMENT ===
-    
+    # GPS coordinates with 6-decimal precision
+    # Accuracy ~0.1m ideal conditions
+
+
+
+    # ======================================================================
+    # === TIMEKEEPING =======================================================
+    # Sensors: DS1302 RTC
+    # Purpose: Accurate timestamping independent of CPU clock
+    # ======================================================================
+
     TelemetryField(
         id="rtc",
-        label="Real Time (DS1302)",
+        label="RTC Time (DS1302)",
         unit="",
         fmt="{}",
         source_key="rtc_time"
     ),
-    # DS1302 Real-Time Clock
-    # Provides timestamp even if system clock drifts
-    # Format: ISO 8601 string "YYYY-MM-DDTHH:MM:SSZ"
-    
-    # === COMPUTER HEALTH ===
-    
+    # ISO 8601 timestamp "YYYY-MM-DDTHH:MM:SSZ"
+    # Battery-backed time keeping
+
+
+
+    # ======================================================================
+    # === POWER SYSTEM (BMS) ===============================================
+    # Sensors: Battery Management System (BMS)
+    # Purpose: Monitor battery health during high-altitude cold exposure
+    # ======================================================================
+
+    TelemetryField(
+        id="batt_voltage",
+        label="Battery Voltage (BMS)",
+        unit="V",
+        fmt="{:.2f}",
+        source_key="batt_voltage"
+    ),
+    # Battery voltage measurement
+    # Determines health, charge level, and cold-weather drop
+
+    TelemetryField(
+        id="batt_current",
+        label="Battery Current (BMS)",
+        unit="A",
+        fmt="{:.2f}",
+        source_key="batt_current"
+    ),
+    # Current draw from BMS
+    # Useful for monitoring sudden power spikes
+
+    TelemetryField(
+        id="batt_temp",
+        label="Battery Temp (BMS)",
+        unit="°C",
+        fmt="{:.1f}",
+        source_key="batt_temp"
+    ),
+    # Battery temperature
+    # Helps detect freezing during high-altitude flight
+
+
+
+    # ======================================================================
+    # === COMMUNICATION / RADIO LINK (LORA) ================================
+    # Sensors: SX127x LoRa Radio
+    # Purpose: Verify link quality, detect dropouts, measure range
+    # ======================================================================
+
+    TelemetryField(
+        id="lora_rssi",
+        label="LoRa RSSI",
+        unit="dBm",
+        fmt="{:.0f}",
+        source_key="lora_rssi"
+    ),
+    # Received Signal Strength Indicator
+    # Typical range: -120 dBm (weak) to -30 dBm (strong)
+
+    TelemetryField(
+        id="lora_snr",
+        label="LoRa SNR",
+        unit="dB",
+        fmt="{:.1f}",
+        source_key="lora_snr"
+    ),
+    # Signal-to-noise ratio
+    # Range: -20 dB (bad) to +10 dB (excellent)
+
+    TelemetryField(
+        id="lora_packets",
+        label="LoRa Packet Count",
+        unit="",
+        fmt="{}",
+        source_key="lora_packets"
+    ),
+    # Number of packets received by the ground station
+    # Helps detect link interruptions
+
+
+
+    # ======================================================================
+    # === SYSTEM HEALTH ====================================================
+    # Sensors: ESP32 internal metrics
+    # Purpose: Monitor CPU load and software performance
+    # ======================================================================
+
     TelemetryField(
         id="cpu",
-        label="Computer Health",
-        unit="",
-        fmt="CPU: {:.1f} %",
+        label="CPU Load",
+        unit="%",
+        fmt="{:.1f}",
         source_key="cpu"
     ),
-    # CPU usage of the onboard computer
-    # Monitors system health and processing load
-    # Range: 0-100%
+    # CPU usage in %
+    # Ensures onboard computer is not overloaded
 ]
 
 
@@ -358,61 +482,101 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
 # ============================================================================
 
 SENSORS: list[SensorDef] = [
-    # === PRIMARY SENSORS (Critical for flight) ===
-    
-    SensorDef(id="bmp", label="BMP"),
-    # BMP280: Barometric Pressure/Altitude Sensor
-    # Critical: Primary altitude measurement
-    # I2C Address: 0x76 or 0x77
-    
-    SensorDef(id="esp32", label="ESP32"),
-    # ESP32: Microcontroller with WiFi/Bluetooth
-    # Critical: Main processor and communication hub
-    # Monitors its own health status
-    
+
+    # ======================================================================
+    # === PRIMARY FLIGHT SENSORS ===========================================
+    # Purpose: Core navigation, altitude, and system control
+    # ======================================================================
+
+    SensorDef(id="bmp", label="BMP180"),
+    # Barometric pressure + altitude sensor
+    # Primary altitude source; I2C address: 0x76/0x77
+
     SensorDef(id="gps", label="GPS"),
-    # GPS Module: Position and time reference
-    # Critical: Position tracking and navigation
-    # Protocol: NMEA over UART
-    
-    # === MOTION SENSORS ===
-    
-    SensorDef(id="mpu", label="MPU6050"),
-    # MPU6050: 6-axis IMU (Accelerometer + Gyroscope)
-    # Important: Motion and orientation tracking
-    # I2C Address: 0x68 or 0x69
-    
-    # === GAS SENSORS ===
-    
-    SensorDef(id="mq131", label="MQ131"),
-    # MQ131: Ozone (O3) sensor
-    # Research: Atmospheric ozone detection
-    # Analog output via ADC
-    
-    SensorDef(id="mq2", label="MQ2"),
-    # MQ2: Flammable gas sensor (LPG, methane, propane)
-    # Safety: Fuel leak detection
-    # Analog output via ADC
-    
-    SensorDef(id="mq7", label="MQ7"),
-    # MQ7: Carbon Monoxide (CO) sensor
-    # Safety: CO leak detection
-    # Analog output via ADC
-    
-    # === ENVIRONMENTAL SENSORS ===
-    
+    # GNSS receiver for position, velocity, and satellite time
+    # Communicates using NMEA sentences over UART
+
+    SensorDef(id="esp32", label="ESP32"),
+    # Onboard microcontroller
+    # Handles processing, telemetry, and system health monitoring
+
+
+
+    # ======================================================================
+    # === ENVIRONMENTAL TEMPERATURE SENSORS ================================
+    # Purpose: Thermal environment analysis (inside & outside payload)
+    # ======================================================================
+
+    SensorDef(id="max6675", label="MAX6675"),
+    # K-type thermocouple amplifier
+    # High-range temperature measurement (0–1024°C)
+
     SensorDef(id="dht22", label="DHT22"),
-    # DHT22: Temperature and Humidity sensor
-    # Environmental: Cabin climate monitoring
-    # Protocol: Single-wire digital
-    
-    # === TIMING ===
-    
+    # Temperature + humidity sensor
+    # Digital single-wire protocol
+
+
+
+    # ======================================================================
+    # === MOTION & DYNAMICS SENSORS =======================================
+    # Purpose: Detect movement, turbulence, acceleration events
+    # ======================================================================
+
+    SensorDef(id="mpu", label="MPU6050"),
+    # 6-axis IMU: accelerometer + gyroscope
+    # I2C address: 0x68/0x69
+
+
+
+    # ======================================================================
+    # === GAS CHEMISTRY SENSORS ============================================
+    # Purpose: Atmospheric research + safety monitoring
+    # ======================================================================
+
+    SensorDef(id="mq131", label="MQ131"),
+    # Ozone sensor
+    # Used for atmospheric chemistry studies; analog output
+
+    SensorDef(id="mq2", label="MQ2"),
+    # Flammable gas detector (LPG, methane, hydrogen)
+    # Safety sensor; analog output
+
+    SensorDef(id="mq7", label="MQ7"),
+    # Carbon Monoxide (CO) detector
+    # Useful for combustion byproducts; analog output
+
+
+
+    # ======================================================================
+    # === POWER SYSTEM (BMS) ===============================================
+    # Purpose: Battery health, charging, and power stability
+    # ======================================================================
+
+    SensorDef(id="bms", label="Battery Management System"),
+    # Monitors battery voltage, current, temperature
+    # Prevents undervoltage or overcurrent damage
+
+
+
+    # ======================================================================
+    # === TIMING / CLOCK ===================================================
+    # Purpose: Stable timestamps independent of CPU clock drift
+    # ======================================================================
+
     SensorDef(id="rtc", label="RTC"),
-    # DS1302: Real-Time Clock
-    # Important: Accurate timestamping
-    # Battery-backed to maintain time during power loss
-    # Protocol: SPI
+    # DS1302 or similar real-time clock
+    # SPI protocol; battery-backed time retention
+
+
+
+    # ======================================================================
+    # === COMMUNICATION / RADIO ===========================================
+    # Purpose: Long-range telemetry using LoRa
+    # ======================================================================
+
+    SensorDef(id="lora", label="LoRa Radio"),
+    # SX127x series long-range RF modem
+    # Provides RSSI, SNR, and packet telemetry
 ]
 
 
