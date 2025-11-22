@@ -122,7 +122,7 @@ class TelemetryTableModel(QAbstractTableModel):
         >>> # All views with this model automatically update
     """
     
-    def __init__(self):
+    def __init__(self, fields: list[TelemetryField] | None = None):
         """
         Initialize TelemetryTableModel.
         
@@ -131,6 +131,9 @@ class TelemetryTableModel(QAbstractTableModel):
         """
         super().__init__()
         
+        # Fields displayed by this model (defaults to global TELEMETRY_FIELDS)
+        self._fields: list[TelemetryField] = fields if fields is not None else TELEMETRY_FIELDS
+
         # Internal data storage: source_key → raw value
         # Using dict for O(1) lookup performance
         self._values: Dict[str, Any] = {}
@@ -150,7 +153,7 @@ class TelemetryTableModel(QAbstractTableModel):
             • Must be fast (O(1) operation)
             • Row count is constant (equals len(TELEMETRY_FIELDS))
         """
-        return len(TELEMETRY_FIELDS)
+        return len(self._fields)
     
     def columnCount(self, parent=QModelIndex()) -> int:
         """
@@ -206,7 +209,7 @@ class TelemetryTableModel(QAbstractTableModel):
             return None  # Only handle display role (text)
         
         # === Get field definition for this row ===
-        field = TELEMETRY_FIELDS[index.row()]
+        field = self._fields[index.row()]
         
         # === Column 0: Parameter name ===
         if index.column() == 0:
@@ -301,7 +304,7 @@ class TelemetryTableModel(QAbstractTableModel):
         changed_rows = []
         
         # === Update values and track changed rows ===
-        for i, field in enumerate(TELEMETRY_FIELDS):
+        for i, field in enumerate(self._fields):
             if field.source_key in data:
                 # Store new value
                 self._values[field.source_key] = data[field.source_key]
