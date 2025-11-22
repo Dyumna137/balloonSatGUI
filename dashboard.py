@@ -152,7 +152,7 @@ class BalloonSatDashboard(QMainWindow):
         telemetry_model (TelemetryTableModel): Shared model for both telemetry tables
         
         Tables:
-            telemetry_table (QTableView): Main telemetry display (left column)
+            previous_telemetry_table (QTableView): Main telemetry display (left column)
             latest_readings_table (QTableView): Duplicate display (middle column)
         
         Buttons:
@@ -289,7 +289,7 @@ class BalloonSatDashboard(QMainWindow):
         Organization:
             finder.group_boxes: Dict[str, QGroupBox]
             finder.buttons: Dict[str, QPushButton]
-            self.telemetry_table: QTableView
+            self.previous_telemetry_table: QTableView
             self.latest_readings_table: QTableView
             finder.custom_widgets: Dict[str, QWidget]
             self.sensor_leds: Dict[str, StatusLED]
@@ -373,11 +373,12 @@ class BalloonSatDashboard(QMainWindow):
         # QTableView supports setModel() for Model-View architecture
         # QTableWidget does not (it's item-based, not model-based)
         print("  Searching for QTableView widgets...")
-        self.telemetry_table = finder.find_widget(QTableView, 'telemetryTable')
+        # keep legacy object name but store under new attribute name
+        self.previous_telemetry_table = finder.find_widget(QTableView, 'telemetryTable')
         self.latest_readings_table = finder.find_widget(QTableView, 'latestReadingsTable')
         self.telemetry_track_table = finder.find_widget(QTableView, 'telemetryTrackTable')
         # Confirmation messages
-        if self.telemetry_table:
+        if self.previous_telemetry_table:
             print("  ✓ Found telemetryTable (QTableView)")
         if self.latest_readings_table:
             print("  ✓ Found latestReadingsTable (QTableView)")
@@ -500,8 +501,8 @@ class BalloonSatDashboard(QMainWindow):
         self.track_model = TelemetryTableModel(fields=track_fields)
         
         # === Configure main telemetry table ===
-        if self.telemetry_table:
-            self._configure_table(self.telemetry_table, self.telemetry_model)
+        if self.previous_telemetry_table:
+            self._configure_table(self.previous_telemetry_table, self.telemetry_model)
             print("  ✓ Configured telemetryTable model")
         else:
             print("  ⚠️  telemetryTable not found - skipping model setup")
@@ -592,12 +593,13 @@ class BalloonSatDashboard(QMainWindow):
         table.setModel(model)
         
         # === Configure horizontal header ===
+        # defining how the columns dimentions (Parameter/Value) should behave and appear.
         # Try to apply a 3:2 column ratio for the two-column (Parameter/Value) layout.
         header: QHeaderView = table.horizontalHeader()
         # Use interactive resize so we can set initial widths programmatically
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)  # Allows the user to manually drag and resize
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)  # Allows the user to manually drag and resize
+        header.setStretchLastSection(False)  # Prevents the last column from automatically growing to fill any remaining space in the table.
         # Set initial widths to approx 3:2 ratio using available table width
         avail = table.viewport().width() or table.width() or 600
         col0 = int(avail * 3 / 5)
@@ -644,7 +646,7 @@ class BalloonSatDashboard(QMainWindow):
         and once during initialization to avoid manual user resizing.
         """
         tables = [
-            getattr(self, 'telemetry_table', None),
+            getattr(self, 'previous_telemetry_table', None),
             getattr(self, 'latest_readings_table', None),
             getattr(self, 'telemetry_track_table', None),
         ]
