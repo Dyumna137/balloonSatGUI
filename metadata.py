@@ -213,7 +213,7 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
 
     TelemetryField(
         id="alt_bmp",
-        label="Altitude (BMP280)",
+        label="Altitude (BMP180)",
         unit="m",
         fmt="{:.1f}",
         source_key="alt_bmp"
@@ -223,7 +223,7 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
 
     TelemetryField(
         id="pressure_bmp",
-        label="Pressure (BMP280)",
+        label="Pressure (BMP180)",
         unit="Pa",
         fmt="{:.0f}",
         source_key="pressure_bmp"
@@ -271,7 +271,7 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
 
     TelemetryField(
         id="temp_bmp",
-        label="Temp (BMP280)",
+        label="Temp (BMP180)",
         unit="°C",
         fmt="{:.2f}",
         source_key="temp_bmp"
@@ -382,6 +382,23 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
     # Battery-backed time keeping
 
 
+    # ======================================================================
+    # === SYSTEM HEALTH ====================================================
+    # Sensors: RPi05 internal metrics
+    # Purpose: Monitor CPU load and software performance
+    # ======================================================================
+
+    TelemetryField(
+        id="cpu",
+        label="CPU Load",
+        unit="%",
+        fmt="{:.1f}",
+        source_key="cpu"
+    ),
+    # CPU usage in %
+    # Ensures onboard computer is not overloaded
+]
+ARCHIVED_TELEMETRY_FIELDS: list[TelemetryField] = [
 
     # ======================================================================
     # === POWER SYSTEM (BMS) ===============================================
@@ -421,61 +438,7 @@ TELEMETRY_FIELDS: list[TelemetryField] = [
 
 
 
-    # ======================================================================
-    # === COMMUNICATION / RADIO LINK (LORA) ================================
-    # Sensors: SX127x LoRa Radio
-    # Purpose: Verify link quality, detect dropouts, measure range
-    # ======================================================================
-
-    TelemetryField(
-        id="lora_rssi",
-        label="LoRa RSSI",
-        unit="dBm",
-        fmt="{:.0f}",
-        source_key="lora_rssi"
-    ),
-    # Received Signal Strength Indicator
-    # Typical range: -120 dBm (weak) to -30 dBm (strong)
-
-    TelemetryField(
-        id="lora_snr",
-        label="LoRa SNR",
-        unit="dB",
-        fmt="{:.1f}",
-        source_key="lora_snr"
-    ),
-    # Signal-to-noise ratio
-    # Range: -20 dB (bad) to +10 dB (excellent)
-
-    TelemetryField(
-        id="lora_packets",
-        label="LoRa Packet Count",
-        unit="",
-        fmt="{}",
-        source_key="lora_packets"
-    ),
-    # Number of packets received by the ground station
-    # Helps detect link interruptions
-
-
-
-    # ======================================================================
-    # === SYSTEM HEALTH ====================================================
-    # Sensors: ESP32 internal metrics
-    # Purpose: Monitor CPU load and software performance
-    # ======================================================================
-
-    TelemetryField(
-        id="cpu",
-        label="CPU Load",
-        unit="%",
-        fmt="{:.1f}",
-        source_key="cpu"
-    ),
-    # CPU usage in %
-    # Ensures onboard computer is not overloaded
 ]
-
 
 # ============================================================================
 # === SENSOR CONFIGURATION ===
@@ -548,17 +511,6 @@ SENSORS: list[SensorDef] = [
 
 
     # ======================================================================
-    # === POWER SYSTEM (BMS) ===============================================
-    # Purpose: Battery health, charging, and power stability
-    # ======================================================================
-
-    SensorDef(id="bms", label="Battery Management System"),
-    # Monitors battery voltage, current, temperature
-    # Prevents undervoltage or overcurrent damage
-
-
-
-    # ======================================================================
     # === TIMING / CLOCK ===================================================
     # Purpose: Stable timestamps independent of CPU clock drift
     # ======================================================================
@@ -567,18 +519,17 @@ SENSORS: list[SensorDef] = [
     # DS1302 or similar real-time clock
     # SPI protocol; battery-backed time retention
 
-
-
-    # ======================================================================
-    # === COMMUNICATION / RADIO ===========================================
-    # Purpose: Long-range telemetry using LoRa
-    # ======================================================================
-
-    SensorDef(id="lora", label="LoRa Radio"),
-    # SX127x series long-range RF modem
-    # Provides RSSI, SNR, and packet telemetry
 ]
+ARCHIVED_SENSORS: list[SensorDef] = [
+    # ======================================================================
+    # === POWER SYSTEM (BMS) ===============================================
+    # Purpose: Battery health, charging, and power stability
+    # ======================================================================
 
+    SensorDef(id="bms", label="Battery Management System"),
+    # Monitors battery voltage, current, temperature
+    # Prevents undervoltage or overcurrent damage
+]
 
 # ============================================================================
 # === UTILITY FUNCTIONS ===
