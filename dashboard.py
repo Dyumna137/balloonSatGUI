@@ -374,7 +374,7 @@ class BalloonSatDashboard(QMainWindow):
         # QTableWidget does not (it's item-based, not model-based)
         print("  Searching for QTableView widgets...")
         # keep legacy object name but store under new attribute name
-        self.previous_telemetry_table = finder.find_widget(QTableView, 'telemetryTable')
+        self.previous_telemetry_table = finder.find_widget(QTableView, 'previousTelemetryTable')
         self.latest_readings_table = finder.find_widget(QTableView, 'latestReadingsTable')
         self.telemetry_track_table = finder.find_widget(QTableView, 'telemetryTrackTable')
         # Confirmation messages
@@ -492,6 +492,11 @@ class BalloonSatDashboard(QMainWindow):
         # Full model: shows all telemetry fields (used by telemetryTable)
         self.telemetry_model = TelemetryTableModel()
 
+        # Previous-snapshot model: shows the telemetry values from the
+        # immediately previous update. This is displayed in
+        # `previous_telemetry_table` so users can compare current vs last.
+        self.previous_snapshot_model = TelemetryTableModel(fields=self.telemetry_model._fields)
+
         # Latest readings model: all latest telemetry except GPS and RTC
         latest_fields = [f for f in TELEMETRY_FIELDS if f.source_key not in ("gps_latlon", "alt_gps", "rtc_time")]
         self.latest_model = TelemetryTableModel(fields=latest_fields)
@@ -502,7 +507,8 @@ class BalloonSatDashboard(QMainWindow):
         
         # === Configure main telemetry table ===
         if self.previous_telemetry_table:
-            self._configure_table(self.previous_telemetry_table, self.telemetry_model)
+            # Show the snapshot of the immediately previous telemetry values
+            self._configure_table(self.previous_telemetry_table, self.previous_snapshot_model)
             print("  ✓ Configured telemetryTable model")
         else:
             print("  ⚠️  telemetryTable not found - skipping model setup")
@@ -789,18 +795,9 @@ class BalloonSatDashboard(QMainWindow):
         """
         # === DISPATCHER SIGNALS (Data Updates from External Sources) ===
         
-        # Telemetry data updated → Update all three table models
-        dispatch.telemetryUpdated.connect(self.telemetry_model.updateTelemetry)
-        # Latest readings (excludes GPS/RTC)
-        try:
-            dispatch.telemetryUpdated.connect(self.latest_model.updateTelemetry)
-        except Exception:
-            pass
-        # Track model (GPS + RTC)
-        try:
-            dispatch.telemetryUpdated.connect(self.track_model.updateTelemetry)
-        except Exception:
-            pass
+        # Telemetry data updated → use a single handler so we can capture
+        # the previous snapshot before applying the new values to live models.
+        dispatch.telemetryUpdated.connect(self._on_telemetry_update)
         
         # Sensor status updated → Update LED indicators
         dispatch.sensorStatusUpdated.connect(self._update_sensors)
@@ -839,6 +836,50 @@ class BalloonSatDashboard(QMainWindow):
             print("  ℹ️  No ESP32-CAM button found in UI (optional)")
         
         print("✓ Signals connected")
+
+    def _on_telemetry_update(self, data: dict):
+        """
+        Central handler for telemetry updates.
+
+        Workflow:
+        1. Build a snapshot of the current values (before applying new data)
+           and update `previous_snapshot_model` with that snapshot.
+        2. Apply the incoming `data` to the live models (`telemetry_model`,
+           `latest_model`, `track_model`).
+
+        This guarantees `previous_telemetry_table` always shows the values
+        from the immediate previous update (or empty on first update).
+        """
+        try:
+            # Capture previous values for fields known by the full model
+            prev = {}
+            for field in self.telemetry_model._fields:
+                key = field.source_key
+                if key in self.telemetry_model._values:
+                    prev[key] = self.telemetry_model._values[key]
+
+            # Update the previous-snapshot model (view shows "one step before")
+            if prev:
+                self.previous_snapshot_model.updateTelemetry(prev)
+
+            # Now update live models with incoming data
+            try:
+                self.telemetry_model.updateTelemetry(data)
+            except Exception:
+                pass
+
+            try:
+                self.latest_model.updateTelemetry(data)
+            except Exception:
+                pass
+
+            try:
+                self.track_model.updateTelemetry(data)
+            except Exception:
+                pass
+        except Exception:
+            # Defensive: do not let telemetry handler raise
+            return
     
     def _initialize_ui_state(self):
         """
