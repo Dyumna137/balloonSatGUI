@@ -1,3 +1,22 @@
+# Ignore archived data and runtime replay files
+Archived/
+data/
+
+# Ignore local runner and generated UI file (kept out of VCS)
+run_with_replay.py
+dashboard.ui
+
+# Byte-compiled / virtual env
+__pycache__/
+venv/
+.venv/
+
+# Editor temp files
+*.pyc
+*.pyo
+*.swp
+Thumbs.db
+*.log
 # .gitignore - BalloonSat Telemetry Dashboard
 # ==============================================
 # Comprehensive ignore file for Python Qt application

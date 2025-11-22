@@ -52,18 +52,28 @@ Version History:
     v2.2 (2025-11-06): Updated widget finder for QTableView
     v2.3 (2025-11-06): Comprehensive documentation added
     v2.4 (2025-11-07): Fixed ESP32-CAM button connection, added QPushButton import
+    v2.5 (2025-11-07): Added live feed widget and improved event handling
+    v2.6 (2025-11-22): Creating New Widget Table and modifying existing table 
 
 Author: Dyumna137
-Date: 2025-11-07 00:14:23 UTC
-Version: 2.4
+Date: 2025-11-22 00:14:23 UTC
+Version: 2.6
 License: MIT
 Package: dashboardGUI
 """
 
 from __future__ import annotations
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTableView, QPushButton
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QTableView,
+    QPushButton,
+    QHeaderView,
+    QAbstractItemView,
+    QSizePolicy,
+)
+from PyQt6.QtCore import Qt, QTimer
 
 # ============================================================================
 # === IMPORTS: Utility Modules ===
@@ -103,11 +113,11 @@ except ImportError:
 try:
     from models import TelemetryTableModel
     from dispatcher import dispatch
-    from metadata import SENSORS
+    from metadata import SENSORS, TELEMETRY_FIELDS
 except ImportError:
     from dashboardGUI.models import TelemetryTableModel
     from dashboardGUI.dispatcher import dispatch
-    from dashboardGUI.metadata import SENSORS
+    from dashboardGUI.metadata import SENSORS, TELEMETRY_FIELDS
 
 
 class BalloonSatDashboard(QMainWindow):
@@ -142,7 +152,7 @@ class BalloonSatDashboard(QMainWindow):
         telemetry_model (TelemetryTableModel): Shared model for both telemetry tables
         
         Tables:
-            telemetry_table (QTableView): Main telemetry display (left column)
+            previous_telemetry_table (QTableView): Main telemetry display (left column)
             latest_readings_table (QTableView): Duplicate display (middle column)
         
         Buttons:
@@ -279,7 +289,7 @@ class BalloonSatDashboard(QMainWindow):
         Organization:
             finder.group_boxes: Dict[str, QGroupBox]
             finder.buttons: Dict[str, QPushButton]
-            self.telemetry_table: QTableView
+            self.previous_telemetry_table: QTableView
             self.latest_readings_table: QTableView
             finder.custom_widgets: Dict[str, QWidget]
             self.sensor_leds: Dict[str, StatusLED]
@@ -297,17 +307,19 @@ class BalloonSatDashboard(QMainWindow):
                 • startButton
                 • stopButton
                 • clearButton
+                • cameraButton
             
             Tables (QTableView):
                 • telemetryTable
                 • latestReadingsTable
+                • telemetryTrackTable
             
             Custom Widgets:
                 • trajectoryChartsWidget (TrajectoryCharts)
                 • cpuGaugeWidget (LinearGauge)
                 • memGaugeWidget (LinearGauge)
             
-            Sensor LEDs (StatusLED, 9 total):
+            Sensor LEDs (StatusLED, 11 total):
                 • bmpIndicator (BMP280 pressure sensor)
                 • esp32Indicator (ESP32 microcontroller)
                 • mq131Indicator (MQ131 ozone sensor)
@@ -317,6 +329,8 @@ class BalloonSatDashboard(QMainWindow):
                 • dht22Indicator (DHT22 temp/humidity sensor)
                 • mq7Indicator (MQ7 CO sensor)
                 • rtcIndicator (DS1302 real-time clock)
+                • LoRaIndicator (LoRa module)
+                • max6675Indicator (Thermocouple)   
         
         Notes:
             • Widget object names are case-sensitive (must match exactly)
@@ -359,14 +373,17 @@ class BalloonSatDashboard(QMainWindow):
         # QTableView supports setModel() for Model-View architecture
         # QTableWidget does not (it's item-based, not model-based)
         print("  Searching for QTableView widgets...")
-        self.telemetry_table = finder.find_widget(QTableView, 'telemetryTable')
+        # keep legacy object name but store under new attribute name
+        self.previous_telemetry_table = finder.find_widget(QTableView, 'previousTelemetryTable')
         self.latest_readings_table = finder.find_widget(QTableView, 'latestReadingsTable')
-        
+        self.telemetry_track_table = finder.find_widget(QTableView, 'telemetryTrackTable')
         # Confirmation messages
-        if self.telemetry_table:
+        if self.previous_telemetry_table:
             print("  ✓ Found telemetryTable (QTableView)")
         if self.latest_readings_table:
             print("  ✓ Found latestReadingsTable (QTableView)")
+        if self.telemetry_track_table:
+            print("  ✓ Found telemetryTrackTable (QTableView)")
         
         # === Find custom widgets (promoted in Qt Designer) ===
         # These MUST be imported before uic.loadUi() was called in __init__
@@ -471,23 +488,44 @@ class BalloonSatDashboard(QMainWindow):
             _configure_table(): For individual table configuration
             _find_all_widgets(): Where table widgets are found
         """
-        # === Create shared model for both tables ===
-        # Using QAbstractTableModel (model/view pattern, not item-based)
+        # === Create models ===
+        # Full model: shows all telemetry fields (used by telemetryTable)
         self.telemetry_model = TelemetryTableModel()
+
+        # Previous-snapshot model: shows the telemetry values from the
+        # immediately previous update. This is displayed in
+        # `previous_telemetry_table` so users can compare current vs last.
+        self.previous_snapshot_model = TelemetryTableModel(fields=self.telemetry_model._fields)
+
+        # Latest readings model: all latest telemetry except GPS and RTC
+        latest_fields = [f for f in TELEMETRY_FIELDS if f.source_key not in ("gps_latlon", "alt_gps", "rtc_time")]
+        self.latest_model = TelemetryTableModel(fields=latest_fields)
+
+        # Track model: small table showing GPS and RTC current values
+        track_fields = [f for f in TELEMETRY_FIELDS if f.source_key in ("gps_latlon", "alt_gps", "rtc_time")]
+        self.track_model = TelemetryTableModel(fields=track_fields)
         
         # === Configure main telemetry table ===
-        if self.telemetry_table:
-            self._configure_table(self.telemetry_table, self.telemetry_model)
+        if self.previous_telemetry_table:
+            # Show the snapshot of the immediately previous telemetry values
+            self._configure_table(self.previous_telemetry_table, self.previous_snapshot_model)
             print("  ✓ Configured telemetryTable model")
         else:
             print("  ⚠️  telemetryTable not found - skipping model setup")
         
         # === Configure latest readings table (same model = synchronized) ===
         if self.latest_readings_table:
-            self._configure_table(self.latest_readings_table, self.telemetry_model)
+            self._configure_table(self.latest_readings_table, self.latest_model)
             print("  ✓ Configured latestReadingsTable model")
         else:
             print("  ⚠️  latestReadingsTable not found - skipping model setup")
+
+        # Configure telemetryTrackTable (RTC + GPS)
+        if self.telemetry_track_table:
+            self._configure_table(self.telemetry_track_table, self.track_model)
+            print("  ✓ Configured telemetryTrackTable model")
+        else:
+            print("  ⚠️  telemetryTrackTable not found - skipping track table setup")
         
         print("✓ Table models configured")
     
@@ -561,8 +599,23 @@ class BalloonSatDashboard(QMainWindow):
         table.setModel(model)
         
         # === Configure horizontal header ===
-        # Stretch last column to fill available space (no empty space on right)
-        table.horizontalHeader().setStretchLastSection(True)
+        # defining how the columns dimentions (Parameter/Value) should behave and appear.
+        # Try to apply a 3:2 column ratio for the two-column (Parameter/Value) layout.
+        header: QHeaderView = table.horizontalHeader()
+        # Use interactive resize so we can set initial widths programmatically
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)  # Allows the user to manually drag and resize
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)  # Allows the user to manually drag and resize
+        header.setStretchLastSection(False)  # Prevents the last column from automatically growing to fill any remaining space in the table.
+        # Set initial widths to approx 3:2 ratio using available table width
+        avail = table.viewport().width() or table.width() or 600
+        col0 = int(avail * 3 / 5)
+        col1 = max(80, avail - col0)
+        try:
+            table.setColumnWidth(0, col0)
+            table.setColumnWidth(1, col1)
+        except Exception:
+            # Some views may not allow sizing at this early stage; ignore
+            pass
         
         # === Configure vertical header ===
         # Hide row numbers (cleaner appearance)
@@ -572,6 +625,18 @@ class BalloonSatDashboard(QMainWindow):
         # Improves readability for dense data
         # Colors defined in dark.qss stylesheet
         table.setAlternatingRowColors(True)
+
+        # Make table expand to fill available layout space. This keeps the
+        # table stretchable inside layout managers so it will take available
+        # space and play well with sibling widgets (charts, group boxes).
+        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        # Disable horizontal scrollbars for a cleaner telemetry display —
+        # we size columns to fit the viewport and intentionally avoid
+        # horizontal scrolling. Use per-pixel scrolling for smoothness if
+        # the user scrolls vertically.
+        table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         
         # === Make table read-only (display-only, no selection) ===
         # No selection: Users cannot select rows
@@ -579,6 +644,54 @@ class BalloonSatDashboard(QMainWindow):
         
         # No editing: Users cannot edit cells inline
         table.setEditTriggers(QTableView.EditTrigger.NoEditTriggers)
+
+    def _resize_tables(self):
+        """
+        Resize table columns to fill available width using a 3:2 ratio
+        (Parameter column : Value column). This is called on window resize
+        and once during initialization to avoid manual user resizing.
+        """
+        tables = [
+            getattr(self, 'previous_telemetry_table', None),
+            getattr(self, 'latest_readings_table', None),
+            getattr(self, 'telemetry_track_table', None),
+        ]
+
+        for table in tables:
+            if not table:
+                continue
+
+            header = table.horizontalHeader()
+            # Allow programmatic column sizing
+            try:
+                header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+            except Exception:
+                pass
+
+            # Compute available viewport width and apply 3:2 ratio
+            avail = table.viewport().width() or table.width() or 600
+            col0 = int(avail * 3 / 5)
+            col1 = max(80, avail - col0)
+            try:
+                table.setColumnWidth(0, col0)
+                table.setColumnWidth(1, col1)
+            except Exception:
+                pass
+
+            # Ensure no horizontal scroll bar appears
+            table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+    def resizeEvent(self, event):
+        """
+        Recompute table column widths when the main window is resized.
+        """
+        try:
+            self._resize_tables()
+        except Exception:
+            pass
+        # Call parent implementation
+        return super().resizeEvent(event)
     
     def _connect_signals(self):
         """
@@ -682,8 +795,9 @@ class BalloonSatDashboard(QMainWindow):
         """
         # === DISPATCHER SIGNALS (Data Updates from External Sources) ===
         
-        # Telemetry data updated → Update both tables via shared model
-        dispatch.telemetryUpdated.connect(self.telemetry_model.updateTelemetry)
+        # Telemetry data updated → use a single handler so we can capture
+        # the previous snapshot before applying the new values to live models.
+        dispatch.telemetryUpdated.connect(self._on_telemetry_update)
         
         # Sensor status updated → Update LED indicators
         dispatch.sensorStatusUpdated.connect(self._update_sensors)
@@ -722,6 +836,50 @@ class BalloonSatDashboard(QMainWindow):
             print("  ℹ️  No ESP32-CAM button found in UI (optional)")
         
         print("✓ Signals connected")
+
+    def _on_telemetry_update(self, data: dict):
+        """
+        Central handler for telemetry updates.
+
+        Workflow:
+        1. Build a snapshot of the current values (before applying new data)
+           and update `previous_snapshot_model` with that snapshot.
+        2. Apply the incoming `data` to the live models (`previous_telemetry_model`,
+           `latest_model`, `track_model`).
+
+        This guarantees `previous_telemetry_table` always shows the values
+        from the immediate previous update (or empty on first update).
+        """
+        try:
+            # Capture previous values for fields known by the full model
+            prev = {}
+            for field in self.telemetry_model._fields:
+                key = field.source_key
+                if key in self.telemetry_model._values:
+                    prev[key] = self.telemetry_model._values[key]
+
+            # Update the previous-snapshot model (view shows "one step before")
+            if prev:
+                self.previous_snapshot_model.updateTelemetry(prev)
+
+            # Now update live models with incoming data
+            try:
+                self.telemetry_model.updateTelemetry(data)
+            except Exception:
+                pass
+
+            try:
+                self.latest_model.updateTelemetry(data)
+            except Exception:
+                pass
+
+            try:
+                self.track_model.updateTelemetry(data)
+            except Exception:
+                pass
+        except Exception:
+            # Defensive: do not let telemetry handler raise
+            return
     
     def _initialize_ui_state(self):
         """
@@ -824,6 +982,12 @@ class BalloonSatDashboard(QMainWindow):
             self.mem_gauge.setLabel("Mem %")
         
         print("✓ UI initialized")
+        # Schedule a single-shot deferred resize. Layouts are finalized
+        # after the event loop runs once, so deferring ensures table
+        # viewport sizes are available and column widths will be computed
+        # correctly. We avoid immediate resize calls here to keep startup
+        # deterministic and not depend on layout timing.
+        QTimer.singleShot(0, self._resize_tables)
     
     # ========================================================================
     # === DATA UPDATE HANDLERS (Called by Dispatcher Signals) ===
