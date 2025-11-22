@@ -844,7 +844,7 @@ class BalloonSatDashboard(QMainWindow):
         Workflow:
         1. Build a snapshot of the current values (before applying new data)
            and update `previous_snapshot_model` with that snapshot.
-        2. Apply the incoming `data` to the live models (`telemetry_model`,
+        2. Apply the incoming `data` to the live models (`previous_telemetry_model`,
            `latest_model`, `track_model`).
 
         This guarantees `previous_telemetry_table` always shows the values
