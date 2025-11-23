@@ -1,77 +1,81 @@
 """
-TrajectoryCharts Widget - Altitude vs Time Visualization
-=========================================================
-
+TrajectoryCharts widget — altitude vs time visualization.
+===============================================================
 A custom PyQt6 widget that displays a single chart for BalloonSat
-altitude visualization over time:
-    • Altitude vs Time: Shows expected vs actual altitude over time
+altitude visualization over time.
+
+- Altitude vs Time: Shows expected vs actual altitude over time
 
 This widget uses PyQtGraph for high-performance real-time plotting with
 support for thousands of data points without performance degradation.
-
+===============================================================
+Changes from v2.0:
 UPDATED: Simplified to show only altitude chart (removed lat/lon map)
 
 Features:
-    • Single-chart display (altitude vs time)
-    • Real-time data appending (100+ points/second)
-    • Expected vs actual trajectory comparison
-    • Interactive zooming and panning
-    • Legend for clear data identification
-    • Optimized rendering for embedded systems
+- Single-chart display (altitude vs time)
+- Real-time data appending (100+ points/second)
+- Expected vs actual trajectory comparison
+- Interactive zooming and panning
+- Legend for clear data identification
+- Optimized rendering for embedded systems
 
 Performance Characteristics:
-    • Update rate: 100+ Hz for continuous data
-    • Data capacity: 10,000+ points without slowdown
-    • Memory usage: ~40 bytes per point (reduced from dual-chart)
-    • CPU usage: <0.5% during continuous updates (reduced from ~1%)
-    • Uses OpenGL acceleration when available
+- Update rate: 100+ Hz for continuous data
+- Data capacity: 10,000+ points without slowdown
+- Memory usage: ~40 bytes per point (reduced from dual-chart)
+- CPU usage: <0.5% during continuous updates (reduced from ~1%)
+- Uses OpenGL acceleration when available
 
 Visual Design:
-    • Expected trajectory: Blue dashed line
-    • Actual trajectory: Orange solid line
-    • Dark theme compatible
-    • Clear axis labels and legend
-    • Grid lines for reference
+- Expected trajectory: Blue dashed line
+- Actual trajectory: Orange solid line
+- Dark theme compatible
+- Clear axis labels and legend
+- Grid lines for reference
 
 Usage Examples:
-    Basic usage:
-        charts = TrajectoryCharts()
+Basic usage::
 
-        point = SimpleNamespace(
-            t=0.0,
-            alt_expected=100.0,
-            alt_actual=99.5
-        )
+    charts = TrajectoryCharts()
+
+    point = SimpleNamespace(
+        t=0.0,
+        alt_expected=100.0,
+        alt_actual=99.5
+    )
+    charts.appendPoint(point)
+
+Batch loading::
+
+    charts = TrajectoryCharts()
+    for point in trajectory_data:
         charts.appendPoint(point)
 
-    Batch loading:
-        charts = TrajectoryCharts()
-        for point in trajectory_data:
-            charts.appendPoint(point)
+Clear and reset::
 
-    Clear and reset:
-        charts.clear()
+    charts.clear()
 
-    Qt Designer promotion:
-        Base class: QWidget
-        Promoted class: TrajectoryCharts
-        Header file: widgets.charts
+Qt Designer promotion:
+- Base class: QWidget
+- Promoted class: TrajectoryCharts
+- Header file: widgets.charts
 
 Data Point Format:
-    Point objects must have these attributes:
-        • t (float): Time in seconds
-        • alt_expected (float): Expected altitude in meters
-        • alt_actual (float): Actual measured altitude in meters
+Point objects must have these attributes:
+- ``t`` (float): Time in seconds
+- ``alt_expected`` (float): Expected altitude in meters
+- ``alt_actual`` (float): Actual measured altitude in meters
 
-    Optional attributes (ignored in single-chart mode):
-        • lat (float): Latitude (no longer used)
-        • lon (float): Longitude (no longer used)
+Optional attributes (ignored in single-chart mode):
+- ``lat`` (float): Latitude (no longer used)
+- ``lon`` (float): Longitude (no longer used)
 
 Version History:
-    v1.0 (2025-11-05): Initial dual-chart version (lat/lon + altitude)
-    v2.0 (2025-11-06): Comprehensive documentation and optimizations
-    v3.0 (2025-11-06): Simplified to single chart (altitude only)
-    v3.5 (2025-11-06): Improving the varable naming and their using also Improving commented documentation
+- v1.0 (2025-11-05): Initial dual-chart version (lat/lon + altitude)
+- v2.0 (2025-11-06): Comprehensive documentation and optimizations
+- v3.0 (2025-11-06): Simplified to single chart (altitude only)
+- v3.5 (2025-11-06): Improved variable naming and documentation.
 
 Author: Dyumna137
 Date: 2025-11-23 11:52:29 UTC
@@ -91,15 +95,8 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget
 # === CHART STYLING CONSTANTS ===
 # ============================================================================
 
-# Expected trajectory styling (blue dashed line)
-_STYLE_EXPECTED = {
-    "color": "#1e90ff",  # Dodger blue
-    "style": pg.QtCore.Qt.PenStyle.DashLine,
-    "width": 2,
-}
-
-# Actual trajectory styling (orange solid)
-_STYLE_ACTUAL = {
+# Altitude trajectory styling
+_STYLE_ALT = {
     "color": "#ffa500",  # Orange
     "style": pg.QtCore.Qt.PenStyle.SolidLine,
     "width": 2,
@@ -116,12 +113,10 @@ class TrajectoryCharts(QWidget):
 
     Attributes:
         alt_plot (PlotWidget): Altitude vs time chart
-        curve_alt_exp (PlotDataItem): Expected altitude line (blue dashed)
-        curve_alt_act (PlotDataItem): Actual altitude line (orange solid)
+        curve_alt (PlotDataItem): Altitude line
 
         _t (List[float]): Time data buffer
-        _alt_exp (List[float]): Expected altitude buffer
-        _alt_act (List[float]): Actual altitude buffer
+        _alt (List[float]): Altitude buffer
 
     Performance:
         • Uses list buffers for O(1) append operations
@@ -205,8 +200,7 @@ class TrajectoryCharts(QWidget):
         # === Initialize data buffers ===
         # Using lists for O(1) append performance
         self._t: List[float] = []
-        self._alt_exp: List[float] = []
-        self._alt_act: List[float] = []
+        self._alt: List[float] = []
 
         # Note: No lat/lon buffers needed anymore
 
@@ -223,31 +217,25 @@ class TrajectoryCharts(QWidget):
         # Prevents unbounded memory growth during long runs.
         self._max_points: int = 10000
 
+        # Marker / symbol display settings
+        # Show small symbols for each data point when dataset is reasonably sized
+        self._show_markers: bool = True
+        # If more than this many points, markers are automatically disabled to avoid huge rendering cost
+        self._markers_threshold: int = 2000
+        # Increase default size for better visibility
+        self._marker_size: int = 8
+
         # === Setup altitude plot ===
-        # Expected altitude: dashed blue line
-        self.curve_alt_exp = self.alt_plot.plot(
-            pen=pg.mkPen(**_STYLE_EXPECTED), name="Expected"
-        )
+        # Altitude: single series (solid orange)
+        self.curve_alt = self.alt_plot.plot(pen=pg.mkPen(**_STYLE_ALT), name="Altitude")
 
-        # Actual altitude: solid orange line
-        self.curve_alt_act = self.alt_plot.plot(
-            pen=pg.mkPen(**_STYLE_ACTUAL), name="Actual"
-        )
-
-        # Initialize curves with empty data and enable automatic downsampling
-        # so that pyqtgraph reduces the number of points rendered when needed.
-        # `downsampleMethod='mean'` preserves shapes for dense datasets.
+        # Initialize curve with empty data and enable automatic downsampling
+        # `downsampleMethod='mean'` preserves shapes for dense datasets when supported.
         try:
-            self.curve_alt_exp.setData([], [], autoDownsample=True, downsampleMethod='mean')
-            self.curve_alt_act.setData([], [], autoDownsample=True, downsampleMethod='mean')
+            self.curve_alt.setData([], [], autoDownsample=True, downsampleMethod='mean')
         except TypeError:
             # Older pyqtgraph versions may not support these kwargs; fall back
-            # to empty data initialization.
-            self.curve_alt_exp.setData([], [])
-            self.curve_alt_act.setData([], [])
-
-        # === Add legend ===
-        self.alt_plot.addLegend().getViewBox()
+            self.curve_alt.setData([], [])
 
         # === Set axis labels ===
         self.alt_plot.setLabel("bottom", "Time", units="s")
@@ -270,15 +258,12 @@ class TrajectoryCharts(QWidget):
         (100+ Hz) with minimal overhead.
 
         Args:
-            p: Point object with attributes:
-               • t (float): Time in seconds
-               • alt_expected (float): Expected altitude in meters
-               • alt_actual (float): Actual measured altitude in meters
+            p: Point object with attributes. Preferred attribute is ``alt`` (float).
+               Backwards-compatible keys supported: ``alt``, ``alt_actual``, ``alt_expected``.
 
-               Optional (ignored):
-               • lat (float): Latitude (no longer used)
-               • lon (float): Longitude (no longer used)
-               • clear (bool): If True, clear chart before adding
+            Required time attribute is ``t`` (float seconds) or ``ts`` when passing dicts
+
+            Optional (ignored): ``lat``/``lon``. ``clear`` (bool) may be set to True to reset chart.
 
         Example:
             >>> from types import SimpleNamespace
@@ -354,48 +339,69 @@ class TrajectoryCharts(QWidget):
             self._base_time = t_s
         t = t_s - self._base_time
 
-        # --- Extract altitude values (support dicts and objects) ---
+
+        # --- Extract altitude value (support dicts and objects) ---
         def _get(k: str):
             if isinstance(p, dict):
                 return p.get(k)
             return getattr(p, k, None)
 
-        alt_expected = _get("alt_expected")
-        alt_actual = _get("alt_actual")
+        alt_val = _get("alt")
+        if alt_val is None:
+            alt_val = _get("alt_actual")
+        if alt_val is None:
+            alt_val = _get("alt_expected")
 
         # fallbacks: look into telemetry dict for common fields
-        if (alt_expected is None or alt_actual is None) and isinstance(p, dict):
+        if alt_val is None and isinstance(p, dict):
             tele = p.get("telemetry")
             if isinstance(tele, dict):
-                if alt_actual is None:
-                    alt_actual = tele.get("alt_gps") or tele.get("alt_bmp") or tele.get("alt")
-                if alt_expected is None:
-                    alt_expected = tele.get("alt_expected")
+                alt_val = tele.get("alt_gps") or tele.get("alt_bmp") or tele.get("alt")
 
         try:
-            alt_actual = float(alt_actual)
+            alt_val = float(alt_val)
         except Exception:
             return
 
-        try:
-            alt_expected = float(alt_expected) if alt_expected is not None else float("nan")
-        except Exception:
-            alt_expected = float("nan")
-
         # === Append to data buffers ===
         self._t.append(t)
-        self._alt_exp.append(alt_expected)
-        self._alt_act.append(alt_actual)
+        self._alt.append(alt_val)
+
+        # Enforce rolling buffer limit to avoid unbounded growth
+        if self._max_points and len(self._t) > self._max_points:
+            # keep only the most recent `_max_points` items
+            self._t = self._t[-self._max_points :]
+            self._alt = self._alt[-self._max_points :]
 
         # Batch UI updates to avoid repainting on every single append
         self._pending_updates += 1
         if self._pending_updates >= max(1, self._update_interval):
+            # Decide whether to draw per-point markers based on current settings and dataset size
+            show_symbols = self._show_markers and (
+                (self._markers_threshold is None) or (len(self._t) <= self._markers_threshold)
+            )
+
             try:
-                self.curve_alt_exp.setData(self._t, self._alt_exp, autoDownsample=True, downsampleMethod='mean')
-                self.curve_alt_act.setData(self._t, self._alt_act, autoDownsample=True, downsampleMethod='mean')
+                if show_symbols:
+                    # Filled symbol with dark edge for contrast on light backgrounds
+                    self.curve_alt.setData(
+                        self._t,
+                        self._alt,
+                        autoDownsample=True,
+                        downsampleMethod='mean',
+                        symbol='o',
+                        symbolSize=self._marker_size,
+                        symbolBrush=pg.mkBrush(_STYLE_ALT['color']),
+                        symbolPen=pg.mkPen('#000000', width=1),
+                    )
+                else:
+                    self.curve_alt.setData(self._t, self._alt, autoDownsample=True, downsampleMethod='mean')
             except TypeError:
-                self.curve_alt_exp.setData(self._t, self._alt_exp)
-                self.curve_alt_act.setData(self._t, self._alt_act)
+                # Fallback for older pyqtgraph versions
+                if show_symbols:
+                    self.curve_alt.setData(self._t, self._alt)
+                else:
+                    self.curve_alt.setData(self._t, self._alt)
             self._pending_updates = 0
 
     def clear(self):
@@ -418,8 +424,7 @@ class TrajectoryCharts(QWidget):
         """
         # === Clear data buffers ===
         self._t.clear()
-        self._alt_exp.clear()
-        self._alt_act.clear()
+        self._alt.clear()
 
         # Reset pending update counter
         try:
@@ -436,8 +441,43 @@ class TrajectoryCharts(QWidget):
         # Note: No lat/lon buffers to clear
 
         # === Clear plot items ===
-        self.curve_alt_exp.clear()
-        self.curve_alt_act.clear()
+        self.curve_alt.clear()
+
+    def setShowMarkers(self, enable: bool):
+        """
+        Enable or disable per-point markers.
+
+        Args:
+            enable: True to show markers (subject to threshold), False to hide markers.
+        """
+        self._show_markers = bool(enable)
+
+    def setMarkersThreshold(self, threshold: int | None):
+        """
+        Set the threshold above which per-point markers are automatically disabled.
+
+        Args:
+            threshold: Maximum number of points to show markers for. Set to ``None`` to always allow markers (use with caution).
+        """
+        if threshold is None:
+            self._markers_threshold = None
+        else:
+            try:
+                self._markers_threshold = int(threshold)
+            except Exception:
+                pass
+
+    def setMarkerSize(self, size: int):
+        """
+        Set the marker symbol size (pixels).
+
+        Args:
+            size: Marker size in pixels (int).
+        """
+        try:
+            self._marker_size = int(size)
+        except Exception:
+            pass
 
     def getDataPointCount(self) -> int:
         """
