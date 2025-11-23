@@ -71,16 +71,18 @@ Version History:
     v1.0 (2025-11-05): Initial dual-chart version (lat/lon + altitude)
     v2.0 (2025-11-06): Comprehensive documentation and optimizations
     v3.0 (2025-11-06): Simplified to single chart (altitude only)
+    v3.5 (2025-11-06): Improving the varable naming and their using also Improving commented documentation
 
 Author: Dyumna137
-Date: 2025-11-06 22:52:29 UTC
-Version: 3.0
+Date: 2025-11-23 11:52:29 UTC
+Version: 3.5
 License: MIT
 """
 
 from __future__ import annotations
 
 from typing import Any, List
+from datetime import datetime, timezone
 
 import pyqtgraph as pg
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
@@ -208,6 +210,19 @@ class TrajectoryCharts(QWidget):
 
         # Note: No lat/lon buffers needed anymore
 
+        # === Update tuning for high-frequency producers ===
+        # Batch plot updates to reduce UI overhead. Charts will repaint
+        # after collecting `_update_interval` points (default: 5).
+        # This keeps appendPoint O(1) while avoiding too many immediate
+        # redraws when data arrives at high rates.
+        self._update_interval: int = 5
+        self._pending_updates: int = 0
+        # Base time for converting absolute timestamps to relative seconds
+        self._base_time: float | None = None
+        # Maximum number of points to keep in the buffers (rolling buffer)
+        # Prevents unbounded memory growth during long runs.
+        self._max_points: int = 10000
+
         # === Setup altitude plot ===
         # Expected altitude: dashed blue line
         self.curve_alt_exp = self.alt_plot.plot(
@@ -219,6 +234,18 @@ class TrajectoryCharts(QWidget):
             pen=pg.mkPen(**_STYLE_ACTUAL), name="Actual"
         )
 
+        # Initialize curves with empty data and enable automatic downsampling
+        # so that pyqtgraph reduces the number of points rendered when needed.
+        # `downsampleMethod='mean'` preserves shapes for dense datasets.
+        try:
+            self.curve_alt_exp.setData([], [], autoDownsample=True, downsampleMethod='mean')
+            self.curve_alt_act.setData([], [], autoDownsample=True, downsampleMethod='mean')
+        except TypeError:
+            # Older pyqtgraph versions may not support these kwargs; fall back
+            # to empty data initialization.
+            self.curve_alt_exp.setData([], [])
+            self.curve_alt_act.setData([], [])
+
         # === Add legend ===
         self.alt_plot.addLegend().getViewBox()
 
@@ -226,8 +253,9 @@ class TrajectoryCharts(QWidget):
         self.alt_plot.setLabel("bottom", "Time", units="s")
         self.alt_plot.setLabel("left", "Altitude", units="m")
 
-        # === Enable antialiasing for smooth lines ===
-        pg.setConfigOptions(antialias=True)
+        # === Enable antialiasing and OpenGL for smooth, accelerated lines ===
+        # Use OpenGL when available to accelerate large-data rendering
+        pg.setConfigOptions(antialias=True, useOpenGL=True)
 
         # === Set background color ===
         self.alt_plot.setBackground("#ffffff")
@@ -281,18 +309,94 @@ class TrajectoryCharts(QWidget):
             if getattr(p, "clear", False):
                 self.clear()
         except Exception:
-            pass  # Ignore if clear attribute doesn't exist
+            pass
+
+        # --- Normalize/parse timestamp `t` to seconds, then convert to relative time
+        raw_t = getattr(p, "t", None)
+        # also accept `ts` field for replay files
+        if raw_t is None and isinstance(p, dict):
+            raw_t = p.get("ts")
+
+        if raw_t is None:
+            return
+
+        # parse ISO datetime strings (e.g. 2025-11-21T12:01:20.000Z)
+        if isinstance(raw_t, str):
+            try:
+                s = raw_t
+                if s.endswith("Z"):
+                    s = s.replace("Z", "+00:00")
+                dt = datetime.fromisoformat(s)
+                t_s = dt.timestamp()
+            except Exception:
+                # fallback: try parsing with microsecond format
+                try:
+                    dt = datetime.strptime(raw_t, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    dt = dt.replace(tzinfo=timezone.utc)
+                    t_s = dt.timestamp()
+                except Exception:
+                    return
+        elif hasattr(raw_t, "timestamp"):
+            t_s = float(raw_t.timestamp())
+        else:
+            try:
+                raw = float(raw_t)
+            except Exception:
+                return
+            if raw > 1e12:
+                t_s = raw / 1e9
+            elif raw > 1e10:
+                t_s = raw / 1e3
+            else:
+                t_s = raw
+
+        if self._base_time is None:
+            self._base_time = t_s
+        t = t_s - self._base_time
+
+        # --- Extract altitude values (support dicts and objects) ---
+        def _get(k: str):
+            if isinstance(p, dict):
+                return p.get(k)
+            return getattr(p, k, None)
+
+        alt_expected = _get("alt_expected")
+        alt_actual = _get("alt_actual")
+
+        # fallbacks: look into telemetry dict for common fields
+        if (alt_expected is None or alt_actual is None) and isinstance(p, dict):
+            tele = p.get("telemetry")
+            if isinstance(tele, dict):
+                if alt_actual is None:
+                    alt_actual = tele.get("alt_gps") or tele.get("alt_bmp") or tele.get("alt")
+                if alt_expected is None:
+                    alt_expected = tele.get("alt_expected")
+
+        try:
+            alt_actual = float(alt_actual)
+        except Exception:
+            return
+
+        try:
+            alt_expected = float(alt_expected) if alt_expected is not None else float("nan")
+        except Exception:
+            alt_expected = float("nan")
 
         # === Append to data buffers ===
-        self._t.append(p.t)
-        self._alt_exp.append(p.alt_expected)
-        self._alt_act.append(p.alt_actual)
+        self._t.append(t)
+        self._alt_exp.append(alt_expected)
+        self._alt_act.append(alt_actual)
 
-        # Note: lat/lon are ignored (backward compatible with old point format)
-
-        # === Update altitude plot ===
-        self.curve_alt_exp.setData(self._t, self._alt_exp)
-        self.curve_alt_act.setData(self._t, self._alt_act)
+        # Batch UI updates to avoid repainting on every single append
+        self._pending_updates += 1
+        if self._pending_updates >= max(1, self._update_interval):
+            try:
+                self.curve_alt_exp.setData(self._t, self._alt_exp, autoDownsample=True, downsampleMethod='mean')
+                self.curve_alt_act.setData(self._t, self._alt_act, autoDownsample=True, downsampleMethod='mean')
+            except TypeError:
+                self.curve_alt_exp.setData(self._t, self._alt_exp)
+                self.curve_alt_act.setData(self._t, self._alt_act)
+            self._pending_updates = 0
 
     def clear(self):
         """
@@ -316,6 +420,18 @@ class TrajectoryCharts(QWidget):
         self._t.clear()
         self._alt_exp.clear()
         self._alt_act.clear()
+
+        # Reset pending update counter
+        try:
+            self._pending_updates = 0
+        except Exception:
+            pass
+
+        # Reset base time so subsequent plots start at t=0 again
+        try:
+            self._base_time = None
+        except Exception:
+            pass
 
         # Note: No lat/lon buffers to clear
 
