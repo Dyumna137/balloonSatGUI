@@ -269,7 +269,7 @@ Project: BalloonSat Telemetry Dashboard
 # These must be imported before Qt Designer UI files are loaded
 # Order doesn't matter (no dependencies between widgets)
 
-from .status_led import StatusLED          # Binary status indicator (LED)
+from .status_led import StatusLED           # Binary status indicator (LED)
 from .gauge import LinearGauge              # Horizontal percentage gauge
 from .charts import TrajectoryCharts        # Altitude trajectory plotting
 from .live_feed import LiveFeedWidget       # ESP32-CAM live video feed
