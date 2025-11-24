@@ -166,7 +166,8 @@ class TelemetryFilePlayerBase:
 
 
 if _QT_AVAILABLE:
-    class TelemetryFilePlayer(QObject, TelemetryFilePlayerBase):
+    # Use a plain Python class that owns a QTimer (avoid subclassing QObject)
+    class TelemetryFilePlayer(TelemetryFilePlayerBase):
         """Qt QTimer-based telemetry player that can be attached as `window.data_source`.
 
         Usage in GUI:
@@ -177,10 +178,19 @@ if _QT_AVAILABLE:
 
         def __init__(self, file_path: str, realtime: bool = True, speed: float = 1.0,
                      default_interval: float = 0.5, loop: bool = False, parent=None):
-            QObject.__init__(self, parent)
+            # Initialize the pure-Python base first.
             TelemetryFilePlayerBase.__init__(self, file_path, realtime, speed, default_interval, loop)
 
-            self._timer = QTimer(self)
+            # Create a QTimer instance and optionally set its parent to keep
+            # Qt ownership semantics, but do NOT subclass QObject to avoid
+            # constructor argument conflicts with PyQt's sip wrapper.
+            self._timer = QTimer()
+            if parent is not None:
+                # Attach the timer to the given Qt parent so it is cleaned up
+                try:
+                    self._timer.setParent(parent)
+                except Exception:
+                    pass
             self._timer.setSingleShot(True)
             self._timer.timeout.connect(self._on_timeout)
             self._idx = 0
