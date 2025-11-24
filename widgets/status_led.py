@@ -76,9 +76,16 @@ License: MIT
 """
 
 from __future__ import annotations
+import os
+import platform
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QColor
 from PyQt6.QtCore import QSize, Qt
+
+# Embedded/Raspberry Pi detection
+_embedded_env = os.getenv("DASHBOARD_EMBEDDED", "").lower()
+_is_arm = "arm" in platform.machine().lower() or "aarch" in platform.machine().lower()
+_EMBEDDED = (_embedded_env in ("1", "true", "yes")) or _is_arm
 
 # ============================================================================
 # === COLOR CONSTANTS (Cached for Performance) ===
@@ -175,7 +182,8 @@ class StatusLED(QWidget):
         
         # === Initialize state ===
         self._state = 'off'  # Start in 'off' state (gray)
-        self._diameter = diameter
+        # If running on embedded targets, keep diameter conservative
+        self._diameter = diameter if not _EMBEDDED else min(diameter, 16)
         self._text = ''  # Store text from Qt Designer (not displayed)
         
         # === Set size constraints ===
@@ -518,7 +526,9 @@ class StatusLED(QWidget):
         
         # === Setup painter ===
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)  # Smooth circle edges
+        # Avoid antialiasing on embedded targets to reduce CPU
+        if not _EMBEDDED:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)  # Smooth circle edges
         
         # === Draw filled circle ===
         painter.setBrush(color)        # Fill color
@@ -696,6 +706,8 @@ class IndicatorsManager:
 # ============================================================================
 # === MODULE TESTING ===
 # ============================================================================
+
+__all__ = ["StatusLED", "IndicatorsManager", "normalize_status_leds", "set_indicator"]
 
 if __name__ == "__main__":
     """
