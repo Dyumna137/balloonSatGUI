@@ -55,25 +55,41 @@ Usage (simple):
 
 from __future__ import annotations
 import json
-import threading
 import time
 from datetime import datetime
 from types import SimpleNamespace
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from dispatcher import dispatch
 
+try:
+    # Prefer Qt timer-based replay when running inside the GUI app
+    from PyQt6.QtCore import QObject, QTimer
+    _QT_AVAILABLE = True
+except Exception:
+    _QT_AVAILABLE = False
+    # Fallback to threading-based player if Qt not available
+    import threading
 
-class TelemetryFilePlayer:
-    """Replay telemetry from a JSON file and emit dispatcher signals.
 
-    Parameters
-    - file_path: path to a NDJSON file or JSON array file
-    - realtime: if True, honor timestamps and sleep between records
-    - speed: replay speed multiplier (>1 faster, <1 slower)
-    - default_interval: seconds between records if no timestamps (float)
-    - loop: whether to loop the file continuously
-    """
+def _parse_ts_static(ts_val) -> Optional[float]:
+    if ts_val is None:
+        return None
+    if isinstance(ts_val, (int, float)):
+        if ts_val > 1e12:
+            return ts_val / 1000.0
+        return float(ts_val)
+    try:
+        if isinstance(ts_val, str) and ts_val.endswith('Z'):
+            ts_val = ts_val[:-1] + '+00:00'
+        dt = datetime.fromisoformat(ts_val)
+        return dt.timestamp()
+    except Exception:
+        return None
+
+
+class TelemetryFilePlayerBase:
+    """Base helpers for file loading and record emission."""
 
     def __init__(self, file_path: str, realtime: bool = True, speed: float = 1.0,
                  default_interval: float = 0.5, loop: bool = False):
@@ -83,89 +99,51 @@ class TelemetryFilePlayer:
         self.default_interval = float(default_interval)
         self.loop = loop
 
-        self._thread: Optional[threading.Thread] = None
-        self._stop_event = threading.Event()
+        self.records: List[Dict[str, Any]] = []
 
-    # ------------------------------------------------------------------
-    def start(self) -> None:
-        if self._thread and self._thread.is_alive():
-            return
-        self._stop_event.clear()
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
-
-    def stop(self) -> None:
-        self._stop_event.set()
-        if self._thread:
-            self._thread.join(timeout=1.0)
-
-    # ------------------------------------------------------------------
     def _open_records(self):
-        # Try to detect NDJSON vs JSON array
+        records = []
         with open(self.file_path, 'r', encoding='utf-8') as fh:
             first = fh.read(1)
             fh.seek(0)
             if not first:
                 return []
             if first == '[':
-                # JSON array
-                return json.load(fh)
-            # NDJSON: yield one JSON object per line
+                try:
+                    records = json.load(fh)
+                except Exception:
+                    records = []
+                return records
+            # NDJSON
             for line in fh:
                 line = line.strip()
                 if not line:
                     continue
                 try:
-                    yield json.loads(line)
+                    records.append(json.loads(line))
                 except json.JSONDecodeError:
-                    # ignore bad lines
                     continue
+        return records
 
-    # ------------------------------------------------------------------
-    def _parse_ts(self, record: Dict[str, Any]) -> Optional[float]:
-        # Accept ISO 8601 string or numeric epoch (seconds or ms)
-        ts = record.get('ts') or record.get('timestamp')
-        if ts is None:
-            return None
-        if isinstance(ts, (int, float)):
-            # if large, assume milliseconds
-            if ts > 1e12:
-                return ts / 1000.0
-            return float(ts)
-        # try parsing ISO format
-        try:
-            # datetime.fromisoformat doesn't accept trailing Z; handle Z
-            if isinstance(ts, str) and ts.endswith('Z'):
-                ts = ts[:-1] + '+00:00'
-            dt = datetime.fromisoformat(ts)
-            return dt.timestamp()
-        except Exception:
-            return None
-
-    # ------------------------------------------------------------------
     def _emit_record(self, record: Dict[str, Any]) -> None:
-        # Emit telemetry dict
         telemetry = record.get('telemetry') or record.get('data') or {}
 
-        # Normalize GPS fields: if gps_lat & gps_lon present, create gps_latlon
+        # Normalize GPS
         if 'gps_lat' in telemetry and 'gps_lon' in telemetry:
             try:
                 telemetry['gps_latlon'] = (float(telemetry['gps_lat']), float(telemetry['gps_lon']))
             except Exception:
                 pass
 
-        # For backwards compatibility with metadata which expects 'gps_latlon'
         if 'gps_latlon' in telemetry and isinstance(telemetry['gps_latlon'], (list, tuple)):
             lat, lon = telemetry['gps_latlon']
             telemetry['gps_latlon'] = f"{lat:.6f}, {lon:.6f}"
 
-        # Emit telemetryUpdated
         try:
             dispatch.telemetryUpdated.emit(dict(telemetry))
         except Exception:
             pass
 
-        # Emit sensorStatusUpdated if present
         sensors = record.get('sensors')
         if isinstance(sensors, dict):
             try:
@@ -173,13 +151,12 @@ class TelemetryFilePlayer:
             except Exception:
                 pass
 
-        # Emit trajectoryAppended for GPS points if lat/lon present
         lat = telemetry.get('gps_lat')
         lon = telemetry.get('gps_lon')
         alt = telemetry.get('alt_gps') or telemetry.get('alt_bmp')
         if lat is not None and lon is not None:
             try:
-                t = self._parse_ts(record) or time.time()
+                t = _parse_ts_static(record.get('ts') or record.get('timestamp')) or time.time()
                 point = SimpleNamespace(t=t, lat=float(lat), lon=float(lon),
                                         alt_expected=alt if alt is not None else 0.0,
                                         alt_actual=alt if alt is not None else 0.0)
@@ -187,42 +164,119 @@ class TelemetryFilePlayer:
             except Exception:
                 pass
 
-    # ------------------------------------------------------------------
-    def _run(self) -> None:
-        while not self._stop_event.is_set():
-            try:
-                records_iter = self._open_records()
-                # If _open_records returned a list (JSON array) use it
-                if isinstance(records_iter, list):
-                    records = records_iter
-                else:
-                    records = list(records_iter)
 
-                if not records:
+if _QT_AVAILABLE:
+    class TelemetryFilePlayer(QObject, TelemetryFilePlayerBase):
+        """Qt QTimer-based telemetry player that can be attached as `window.data_source`.
+
+        Usage in GUI:
+            player = TelemetryFilePlayer(path, realtime=True)
+            window.data_source = player
+            # Buttons call player.start()/player.stop()
+        """
+
+        def __init__(self, file_path: str, realtime: bool = True, speed: float = 1.0,
+                     default_interval: float = 0.5, loop: bool = False, parent=None):
+            QObject.__init__(self, parent)
+            TelemetryFilePlayerBase.__init__(self, file_path, realtime, speed, default_interval, loop)
+
+            self._timer = QTimer(self)
+            self._timer.setSingleShot(True)
+            self._timer.timeout.connect(self._on_timeout)
+            self._idx = 0
+            self._prev_ts = None
+
+        def start(self) -> None:
+            # Load records into memory
+            self.records = self._open_records()
+            if not self.records:
+                return
+            self._idx = 0
+            self._prev_ts = None
+            # Immediately emit first record and schedule next
+            self._on_timeout()
+
+        def stop(self) -> None:
+            if self._timer.isActive():
+                self._timer.stop()
+
+        def _on_timeout(self):
+            if not self.records:
+                return
+            if self._idx >= len(self.records):
+                if self.loop:
+                    self._idx = 0
+                else:
                     return
 
-                prev_ts = None
-                for rec in records:
-                    if self._stop_event.is_set():
-                        break
-                    ts = self._parse_ts(rec)
-                    if self.realtime and ts is not None and prev_ts is not None:
-                        # sleep scaled by speed
-                        wait = max(0.0, (ts - prev_ts) / max(0.0001, self.speed))
-                        time.sleep(wait)
-                    elif self.realtime and ts is None:
-                        time.sleep(self.default_interval / max(0.0001, self.speed))
-
-                    self._emit_record(rec)
-                    prev_ts = ts or time.time()
-
-                if not self.loop:
-                    break
-                # loop: small pause before replaying
-                time.sleep(0.1)
+            rec = self.records[self._idx]
+            try:
+                self._emit_record(rec)
             except Exception:
-                # Prevent thread from dying; log minimally then stop
-                break
+                pass
+
+            # compute delay to next record
+            curr_ts = _parse_ts_static(rec.get('ts') or rec.get('timestamp'))
+            next_idx = self._idx + 1
+            delay_ms = int(self.default_interval * 1000 / max(0.0001, self.speed))
+            if self.realtime and curr_ts is not None and next_idx < len(self.records):
+                next_ts = _parse_ts_static(self.records[next_idx].get('ts') or self.records[next_idx].get('timestamp'))
+                if next_ts is not None and curr_ts is not None:
+                    wait = max(0.0, (next_ts - curr_ts) / max(0.0001, self.speed))
+                    delay_ms = int(wait * 1000)
+
+            self._idx = next_idx
+            # schedule next
+            self._timer.start(max(1, delay_ms))
+
+
+else:
+    # Fallback threading-based player (keeps earlier behavior for CLI use)
+    class TelemetryFilePlayer(TelemetryFilePlayerBase):
+        def __init__(self, file_path: str, realtime: bool = True, speed: float = 1.0,
+                     default_interval: float = 0.5, loop: bool = False):
+            super().__init__(file_path, realtime, speed, default_interval, loop)
+            self._thread: Optional[threading.Thread] = None
+            self._stop_event = threading.Event()
+
+        def start(self) -> None:
+            if self._thread and self._thread.is_alive():
+                return
+            self._stop_event.clear()
+            self._thread = threading.Thread(target=self._run, daemon=True)
+            self._thread.start()
+
+        def stop(self) -> None:
+            self._stop_event.set()
+            if self._thread:
+                self._thread.join(timeout=1.0)
+
+        def _run(self) -> None:
+            while not self._stop_event.is_set():
+                try:
+                    self.records = self._open_records()
+                    if not self.records:
+                        return
+
+                    prev_ts = None
+                    for rec in self.records:
+                        if self._stop_event.is_set():
+                            break
+                        ts = _parse_ts_static(rec.get('ts') or rec.get('timestamp'))
+                        if self.realtime and ts is not None and prev_ts is not None:
+                            wait = max(0.0, (ts - prev_ts) / max(0.0001, self.speed))
+                            time.sleep(wait)
+                        elif self.realtime and ts is None:
+                            time.sleep(self.default_interval / max(0.0001, self.speed))
+
+                        self._emit_record(rec)
+                        prev_ts = ts or time.time()
+
+                    if not self.loop:
+                        break
+                    time.sleep(0.1)
+                except Exception:
+                    break
 
 
 if __name__ == "__main__":
