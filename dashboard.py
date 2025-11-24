@@ -234,6 +234,9 @@ class BalloonSatDashboard(QMainWindow):
         """
         # === Step 1: Initialize parent QMainWindow ===
         super().__init__()
+        # Placeholder for an attached data source object. Tests and external
+        # code may set `window.data_source = ...` to provide telemetry.
+        self.data_source = None
         
         # === Step 2: Load UI from Qt Designer file ===
         # This creates all widgets, layouts, and basic connections defined in Designer
@@ -266,6 +269,19 @@ class BalloonSatDashboard(QMainWindow):
         # === Step 7: Initialize UI state ===
         # Set initial widget states, colors, labels, etc.
         self._initialize_ui_state()
+        # Safety: also set the actual QPushButton widgets directly to ensure
+        # the visible UI matches expected enabled states. This covers cases
+        # where WidgetFinder failed or Designer set different defaults.
+        try:
+            start_w = self.findChild(QPushButton, 'startButton')
+            stop_w = self.findChild(QPushButton, 'stopButton')
+            if start_w:
+                start_w.setEnabled(True)
+            if stop_w:
+                stop_w.setEnabled(False)
+        except Exception:
+            # Non-fatal: continue even if widgets not found
+            pass
     
     # ========================================================================
     # === INITIALIZATION METHODS ===
@@ -435,6 +451,25 @@ class BalloonSatDashboard(QMainWindow):
         self.btn_start = finder.buttons.get('startButton')
         self.btn_stop = finder.buttons.get('stopButton')
         self.btn_clear = finder.buttons.get('clearButton')
+        # Fallbacks for common alternative object names (robustness)
+        if not self.btn_start:
+            for alt in ('btn_start', 'btnStart', 'start', 'start_button'):
+                w = self.findChild(QPushButton, alt)
+                if w:
+                    self.btn_start = w
+                    break
+        if not self.btn_stop:
+            for alt in ('btn_stop', 'btnStop', 'stop', 'stop_button'):
+                w = self.findChild(QPushButton, alt)
+                if w:
+                    self.btn_stop = w
+                    break
+        # Debugging output: report whether Start/Stop widgets were found
+        try:
+            print(f"WidgetFinder: btn_start found={bool(self.btn_start)}, btn_stop found={bool(self.btn_stop)}")
+        except Exception:
+            # Keep robust if print formatting fails
+            print("WidgetFinder: start/stop found?", bool(self.btn_start), bool(self.btn_stop))
         
         self.trajectory_charts = finder.custom_widgets.get('trajectoryChartsWidget')
         self.cpu_gauge = finder.custom_widgets.get('cpuGaugeWidget')
@@ -692,6 +727,18 @@ class BalloonSatDashboard(QMainWindow):
             pass
         # Call parent implementation
         return super().resizeEvent(event)
+
+    def closeEvent(self, event):
+        """
+        Ensure any attached data source is stopped when the window closes.
+        """
+        ds = getattr(self, "data_source", None)
+        if ds:
+            try:
+                ds.stop()
+            except Exception as e:
+                print("Error stopping data_source on close:", e)
+        return super().closeEvent(event)
     
     def _connect_signals(self):
         """
@@ -865,20 +912,24 @@ class BalloonSatDashboard(QMainWindow):
             # Now update live models with incoming data
             try:
                 self.telemetry_model.updateTelemetry(data)
-            except Exception:
-                pass
+            except Exception as e:
+                print("TelemetryModel update error:", e)
 
             try:
                 self.latest_model.updateTelemetry(data)
-            except Exception:
-                pass
+            except Exception as e:
+                print("LatestModel update error:", e)
 
             try:
                 self.track_model.updateTelemetry(data)
-            except Exception:
-                pass
+            except Exception as e:
+                print("TrackModel update error:", e)
         except Exception:
             # Defensive: do not let telemetry handler raise
+            # Log the exception for easier debugging
+            import traceback
+            print("Error in _on_telemetry_update:")
+            traceback.print_exc()
             return
     
     def _initialize_ui_state(self):
@@ -950,16 +1001,17 @@ class BalloonSatDashboard(QMainWindow):
             _find_all_widgets(): Where widget references are obtained
             _update_sensors(): Method that changes LED states based on data
         """
-        # === Disable start/stop buttons (GUI-only mode) ===
-        # These buttons would control data streaming in full application
-        # Currently disabled since dashboard has no integrated data source
+        # === Start/Stop button initial states ===
+        # Enable Start by default so user can attempt to start a data source.
+        # If no `data_source` is attached the handler will print a helpful error.
         if self.btn_start:
-            self.btn_start.setEnabled(False)
-            self.btn_start.setToolTip("Not available in GUI-only mode")
-        
+            self.btn_start.setEnabled(True)
+            self.btn_start.setToolTip("Start data stream (attach data_source to window)")
+
         if self.btn_stop:
+            # Stop is disabled until a stream is started
             self.btn_stop.setEnabled(False)
-            self.btn_stop.setToolTip("Not available in GUI-only mode")
+            self.btn_stop.setToolTip("Stop data stream")
         
         # === Enable clear button ===
         # Clear button is always functional (can clear even when empty)
@@ -1335,8 +1387,8 @@ class BalloonSatDashboard(QMainWindow):
         try:
             if getattr(p, "clear", False):
                 self.trajectory_charts.clear()
-        except Exception:
-            pass  # Ignore if clear attribute doesn't exist
+        except Exception as e:
+            print("Error checking 'clear' on trajectory point:", e)
         
         # Add point to chart (updates both expected and actual lines)
         self.trajectory_charts.appendPoint(p)
@@ -1429,8 +1481,7 @@ class BalloonSatDashboard(QMainWindow):
         Handle Start Stream button click.
         
         This method would start the data stream in a full implementation with
-        integrated data source (serial port, network, file playback). Currently
-        disabled in GUI-only mode.
+        integrated data source (serial port, network, file playback). 
         
         Intended Behavior (Full Implementation):
             1. Enable data source (open serial port, start network listener, etc.)
@@ -1469,7 +1520,15 @@ class BalloonSatDashboard(QMainWindow):
             _on_stop(): Complementary stop handler
             _initialize_ui_state(): Where button is initially disabled
         """
-        print("▶️  Start button clicked (not implemented in GUI-only mode)")
+        if not getattr(self, "data_source", None):
+            print("Error: No data source configured")
+            return
+        self.data_source.start()
+        if self.btn_start:
+            self.btn_start.setEnabled(False)
+        if self.btn_stop:
+            self.btn_stop.setEnabled(True)
+        print("▶️ Stream started")
         # TODO: Implement stream starting logic if needed
         # Example:
         # self.data_source.start()
@@ -1520,7 +1579,13 @@ class BalloonSatDashboard(QMainWindow):
             _on_start(): Complementary start handler
             _initialize_ui_state(): Where button is initially disabled
         """
-        print("⏹️  Stop button clicked (not implemented in GUI-only mode)")
+        if getattr(self, "data_source", None):
+            self.data_source.stop()
+        if self.btn_start:
+            self.btn_start.setEnabled(True)
+        if self.btn_stop:
+            self.btn_stop.setEnabled(False)
+        print("⏹️ Stream stopped")
         # TODO: Implement stream stopping logic if needed
         # Example:
         # self.data_source.stop()
@@ -1770,7 +1835,9 @@ def main(argv=None):
         
         # Show window (makes it visible)
         window.show()
-        
+
+
+
         # Print startup message
         print("\n" + "="*60)
         print("🚀 BalloonSat Telemetry Dashboard Started")
