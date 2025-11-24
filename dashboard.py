@@ -1803,7 +1803,7 @@ def main(argv=None):
     
     Notes:
         • QApplication created once per process (singleton)
-        • Stylesheet applied at application level (affects all widgets)
+        • Stteylesheet applied at application level (affects all widgets)
         • Event loop blocks until window closed
         • Clean shutdown on window close
     
@@ -1835,9 +1835,29 @@ def main(argv=None):
         
         # Show window (makes it visible)
         window.show()
-
-
-
+        # Attempt to attach a demo TelemetryFilePlayer if a replay file exists
+        try:
+            from telemetry_bridge import TelemetryFilePlayer
+            import os
+            base = os.path.dirname(__file__)
+            candidates = [
+                os.path.join(base, 'data', 'replays', 'demo.ndjson'),
+                os.path.join(base, 'data', 'replays', 'demo.json'),
+                os.path.join(base, 'data', 'demo.ndjson'),
+                os.path.join(base, 'data', 'demo.json')
+            ]
+            demo_fp = None
+            for c in candidates:
+                if os.path.exists(c):
+                    demo_fp = c
+                    break
+            if demo_fp:
+                player = TelemetryFilePlayer(demo_fp, realtime=False, speed=1.0, loop=True, parent=window)
+                window.data_source = player
+                print(f"Attached demo TelemetryFilePlayer -> {demo_fp}")
+        except Exception:
+            # Non-fatal: if telemetry_bridge can't be imported or no demo file, continue silently
+            pass
         # Print startup message
         print("\n" + "="*60)
         print("🚀 BalloonSat Telemetry Dashboard Started")
