@@ -1391,7 +1391,22 @@ class BalloonSatDashboard(QMainWindow):
             print("Error checking 'clear' on trajectory point:", e)
         
         # Add point to chart (updates both expected and actual lines)
-        self.trajectory_charts.appendPoint(p)
+        try:
+            self.trajectory_charts.appendPoint(p)
+            # Diagnostic: print current buffer size to confirm UI update
+            try:
+                cnt = self.trajectory_charts.getDataPointCount()
+                print(f"✓ Trajectory appended; total points={cnt}")
+            except Exception:
+                pass
+            # Force a repaint of the plot widget to ensure visual refresh
+            try:
+                self.trajectory_charts.update()
+                self.trajectory_charts.alt_plot.repaint()
+            except Exception:
+                pass
+        except Exception as e:
+            print("Error appending trajectory point:", e)
     
     def _clear_trajectory(self):
         """
