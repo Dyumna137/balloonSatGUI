@@ -61,7 +61,7 @@ Version: 2.0
 from __future__ import annotations
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QColor, QPen, QFont
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt
 
 # ============================================================================
 # === COLOR CONSTANTS (Cached for Performance) ===

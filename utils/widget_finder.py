@@ -225,9 +225,9 @@ class WidgetFinder:
         if widget is None and self.verbose and not silent:
             print(f"⚠️  Warning: Could not find {widget_class.__name__} "
                   f"with name '{object_name}'")
-            print(f"    • Check objectName in Qt Designer matches exactly")
-            print(f"    • Ensure widget is in the .ui file")
-            print(f"    • For promoted widgets, ensure class is imported")
+            print("    • Check objectName in Qt Designer matches exactly")
+            print("    • Ensure widget is in the .ui file")
+            print("    • For promoted widgets, ensure class is imported")
         
         return widget
     

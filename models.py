@@ -51,7 +51,7 @@ Version: 2.0
 
 from __future__ import annotations
 from typing import Any, Dict
-from PyQt6.QtCore import QAbstractTableModel, Qt, QModelIndex, QVariant
+from PyQt6.QtCore import QAbstractTableModel, Qt, QModelIndex
 
 # ============================================================================
 # === IMPORTS: Metadata ===

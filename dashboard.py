@@ -114,11 +114,11 @@ except ImportError:
 try:
     from models import TelemetryTableModel
     from dispatcher import dispatch
-    from metadata import SENSORS, TELEMETRY_FIELDS
+    from metadata import TELEMETRY_FIELDS
 except ImportError:
     from dashboardGUI.models import TelemetryTableModel
     from dashboardGUI.dispatcher import dispatch
-    from dashboardGUI.metadata import SENSORS, TELEMETRY_FIELDS
+    from dashboardGUI.metadata import TELEMETRY_FIELDS
 
 
 class BalloonSatDashboard(QMainWindow):

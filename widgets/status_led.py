@@ -77,8 +77,8 @@ License: MIT
 
 from __future__ import annotations
 from PyQt6.QtWidgets import QWidget
-from PyQt6.QtGui import QPainter, QColor, QPen
-from PyQt6.QtCore import QSize, Qt, QObject
+from PyQt6.QtGui import QPainter, QColor
+from PyQt6.QtCore import QSize, Qt
 
 # ============================================================================
 # === COLOR CONSTANTS (Cached for Performance) ===

@@ -64,7 +64,7 @@ from dispatcher import dispatch
 
 try:
     # Prefer Qt timer-based replay when running inside the GUI app
-    from PyQt6.QtCore import QObject, QTimer
+    from PyQt6.QtCore import QTimer
     _QT_AVAILABLE = True
 except Exception:
     _QT_AVAILABLE = False
@@ -316,7 +316,8 @@ else:
 
 if __name__ == "__main__":
     # Quick CLI demo: play `data/replays/demo.ndjson` if available
-    import os, sys
+    import os
+    import sys
     base = os.path.dirname(__file__)
     candidates = [
         os.path.join(base, 'data', 'replays', 'demo.ndjson'),
