@@ -64,6 +64,7 @@ Package: dashboardGUI
 
 from __future__ import annotations
 import sys
+import os
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -1039,6 +1040,51 @@ class BalloonSatDashboard(QMainWindow):
         # viewport sizes are available and column widths will be computed
         # correctly. We avoid immediate resize calls here to keep startup
         # deterministic and not depend on layout timing.
+        # If the dashboard should run in a light/embedded mode, apply
+        # conservative chart settings and hide heavy UI elements like
+        # the ESP32-CAM button to reduce CPU / GPU load on small devices.
+        try:
+            light_mode = os.getenv("DASHBOARD_LIGHT_MODE", "").lower() in ("1", "true", "yes", "on")
+        except Exception:
+            light_mode = False
+
+        if light_mode:
+            print("⚡ DASHBOARD_LIGHT_MODE active: applying light-mode optimizations")
+            try:
+                if self.trajectory_charts:
+                    # Coarser update interval (batch more points between repaints)
+                    try:
+                        self.trajectory_charts.setUpdateInterval(10)
+                    except Exception:
+                        pass
+                    # Reduce rolling buffer size
+                    try:
+                        self.trajectory_charts.setMaxPoints(2000)
+                    except Exception:
+                        pass
+                    # Disable per-point markers to reduce draw cost
+                    try:
+                        self.trajectory_charts.setShowMarkers(False)
+                    except Exception:
+                        pass
+                    # Lower marker threshold if still using markers
+                    try:
+                        self.trajectory_charts.setMarkersThreshold(200)
+                    except Exception:
+                        pass
+            except Exception as e:
+                print("Error applying light-mode chart settings:", e)
+
+            # Hide camera/open-camera button (if present) to avoid starting live feed
+            try:
+                for btn_name in ['cameraButton', 'btn_camera', 'btn_esp32cam', 'openCameraButton']:
+                    b = self.findChild(QPushButton, btn_name)
+                    if b:
+                        b.setVisible(False)
+                        print(f"  ✂️ Hidden camera button: {btn_name}")
+            except Exception:
+                pass
+
         QTimer.singleShot(0, self._resize_tables)
     
     # ========================================================================

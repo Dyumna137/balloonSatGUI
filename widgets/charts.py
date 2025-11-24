@@ -205,25 +205,27 @@ class TrajectoryCharts(QWidget):
         # Note: No lat/lon buffers needed anymore
 
         # === Update tuning for high-frequency producers ===
-        # Batch plot updates to reduce UI overhead. Charts will repaint
-        # after collecting `_update_interval` points (default: 5).
-        # This keeps appendPoint O(1) while avoiding too many immediate
-        # redraws when data arrives at high rates.
-        self._update_interval: int = 1
+        # Batch UI updates to reduce UI overhead. Charts will repaint
+        # after collecting `_update_interval` points. Higher values
+        # reduce repaint frequency and CPU usage on embedded devices.
+        # Default set to 5 for a good balance on low-power hardware.
+        self._update_interval: int = 5
         self._pending_updates: int = 0
         # Base time for converting absolute timestamps to relative seconds
         self._base_time: float | None = None
         # Maximum number of points to keep in the buffers (rolling buffer)
         # Prevents unbounded memory growth during long runs.
-        self._max_points: int = 10000
-
+        # Prevents unbounded memory growth during long runs.
+        # Lower this default for Raspberry Pi-class hardware.
+        self._max_points: int = 5000
         # Marker / symbol display settings
         # Show small symbols for each data point when dataset is reasonably sized
         self._show_markers: bool = True
-        # If more than this many points, markers are automatically disabled to avoid huge rendering cost
-        self._markers_threshold: int = 2000
-        # Increase default size for better visibility
-        self._marker_size: int = 8
+        # If more than this many points, markers are automatically disabled
+        # to avoid huge rendering cost. Lower default for embedded targets.
+        self._markers_threshold: int = 500
+        # Default marker size (smaller on embedded displays)
+        self._marker_size: int = 6
 
         # === Setup altitude plot ===
         # Altitude: single series (solid orange)
@@ -476,6 +478,23 @@ class TrajectoryCharts(QWidget):
         """
         try:
             self._marker_size = int(size)
+        except Exception:
+            pass
+
+    def setUpdateInterval(self, interval: int):
+        """Set how many appended points to batch before repainting.
+
+        Higher values reduce repaint frequency and CPU usage.
+        """
+        try:
+            self._update_interval = max(1, int(interval))
+        except Exception:
+            pass
+
+    def setMaxPoints(self, max_points: int):
+        """Set rolling buffer size for plotted points."""
+        try:
+            self._max_points = max(0, int(max_points))
         except Exception:
             pass
 
