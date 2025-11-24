@@ -196,17 +196,36 @@ if _QT_AVAILABLE:
             self._idx = 0
             self._prev_ts = None
 
-        def start(self) -> None:
-            # Load records into memory
-            self.records = self._open_records()
+        def start(self, restart: bool = False) -> None:
+            """Start or resume playback.
+
+            If `restart` is True, playback restarts from the beginning.
+            Otherwise, playback resumes from the current index where it was
+            stopped (pause/resume behavior).
+            """
+            # Load records into memory only if not loaded yet or if restart requested
+            if not self.records or restart:
+                self.records = self._open_records()
             if not self.records:
                 return
-            self._idx = 0
-            self._prev_ts = None
-            # Immediately emit first record and schedule next
+
+            # If restarting explicitly, reset index; otherwise resume from stored index
+            if restart:
+                self._idx = 0
+            else:
+                # If index is beyond end (previously completed), wrap if looping
+                if self._idx >= len(self.records):
+                    if self.loop:
+                        self._idx = 0
+                    else:
+                        # nothing to resume; start from beginning
+                        self._idx = 0
+
+            # Immediately emit the record at current index and schedule next
             self._on_timeout()
 
         def stop(self) -> None:
+            # Stop the timer but keep `self._idx` so playback can resume
             if self._timer.isActive():
                 self._timer.stop()
 
@@ -264,14 +283,17 @@ else:
         def _run(self) -> None:
             while not self._stop_event.is_set():
                 try:
-                    self.records = self._open_records()
+                    # Load records if not yet loaded
+                    if not self.records:
+                        self.records = self._open_records()
                     if not self.records:
                         return
 
                     prev_ts = None
-                    for rec in self.records:
-                        if self._stop_event.is_set():
-                            break
+                    # Iterate starting at current index to allow resume
+                    idx = self._idx
+                    while idx < len(self.records) and not self._stop_event.is_set():
+                        rec = self.records[idx]
                         ts = _parse_ts_static(rec.get('ts') or rec.get('timestamp'))
                         if self.realtime and ts is not None and prev_ts is not None:
                             wait = max(0.0, (ts - prev_ts) / max(0.0001, self.speed))
@@ -281,6 +303,9 @@ else:
 
                         self._emit_record(rec)
                         prev_ts = ts or time.time()
+                        idx += 1
+                        # store idx as next-to-play so stop/resume works
+                        self._idx = idx
 
                     if not self.loop:
                         break
