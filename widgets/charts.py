@@ -209,7 +209,7 @@ class TrajectoryCharts(QWidget):
         # after collecting `_update_interval` points (default: 5).
         # This keeps appendPoint O(1) while avoiding too many immediate
         # redraws when data arrives at high rates.
-        self._update_interval: int = 5
+        self._update_interval: int = 1
         self._pending_updates: int = 0
         # Base time for converting absolute timestamps to relative seconds
         self._base_time: float | None = None
