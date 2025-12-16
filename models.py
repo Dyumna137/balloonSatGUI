@@ -302,23 +302,21 @@ class TelemetryTableModel(QAbstractTableModel):
             If calling from another thread, use Qt signals or QMetaObject.invokeMethod.
         """
         changed_rows = []
-        
-        # === Update values and track changed rows ===
+
+        # Update values and track changed rows
         for i, field in enumerate(self._fields):
             if field.source_key in data:
-                # Store new value
                 self._values[field.source_key] = data[field.source_key]
-                # Track that this row changed
                 changed_rows.append(i)
-        
-        # === Emit dataChanged signals for changed rows ===
-        # Optimization: Emit one signal per row (column 1 only, parameter names don't change)
+
+        # Emit a single contiguous dataChanged range covering all changed rows
         if changed_rows:
-            for row in changed_rows:
-                # Create model index for Value column (column 1) of this row
-                index_value = self.index(row, 1)
-                # Emit dataChanged to notify views
-                self.dataChanged.emit(index_value, index_value)
+            first = min(changed_rows)
+            last = max(changed_rows)
+            index_first = self.index(first, 1)
+            index_last = self.index(last, 1)
+            # Emit one signal for the whole range (simpler and still efficient)
+            self.dataChanged.emit(index_first, index_last)
     
     def _resolve_field_value(self, field: TelemetryField) -> str:
         """

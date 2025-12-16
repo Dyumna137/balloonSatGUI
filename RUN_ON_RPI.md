@@ -38,20 +38,3 @@ If you'd like, I can:
 - Replace pyqtgraph with a simpler drawing solution (less features but lower overhead).
 
 Which of these would you like me to implement next?
-
-Simplified launcher
---------------------
-To make running on Raspberry Pi easier without changing any code, a
-small helper script `run_simple.py` has been added. It sets conservative
-environment variables and starts the dashboard with embedded-friendly
-defaults (reduced drawing detail, OpenGL disabled).
-
-Usage (from project root):
-
-```pwsh
-python run_simple.py
-```
-
-This script is non-invasive: it doesn't modify the dashboard source,
-only sets environment variables at process start to enable the lower-cost
-path already present in the codebase.

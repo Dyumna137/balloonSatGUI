@@ -73,17 +73,24 @@ except Exception:
 
 
 def _parse_ts_static(ts_val) -> Optional[float]:
+    # None -> no timestamp
     if ts_val is None:
         return None
+
+    # Numeric timestamps (seconds or milliseconds)
     if isinstance(ts_val, (int, float)):
-        if ts_val > 1e12:
-            return ts_val / 1000.0
-        return float(ts_val)
+        v = float(ts_val)
+        # Heuristic: very large numbers are milliseconds
+        if v > 1e12:
+            v = v / 1000.0
+        return v
+
+    # Try ISO datetime parsing for strings (handle trailing Z)
     try:
-        if isinstance(ts_val, str) and ts_val.endswith('Z'):
-            ts_val = ts_val[:-1] + '+00:00'
-        dt = datetime.fromisoformat(ts_val)
-        return dt.timestamp()
+        s = str(ts_val)
+        if s.endswith('Z'):
+            s = s[:-1] + '+00:00'
+        return datetime.fromisoformat(s).timestamp()
     except Exception:
         return None
 
@@ -194,7 +201,7 @@ if _QT_AVAILABLE:
             self._timer.setSingleShot(True)
             self._timer.timeout.connect(self._on_timeout)
             self._idx = 0
-            self._prev_ts = None
+            # `_prev_ts` is not used in the QTimer player; removed to reduce unused state
 
         def start(self, restart: bool = False) -> None:
             """Start or resume playback.
