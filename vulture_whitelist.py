@@ -11,7 +11,7 @@ import widgets
 from widgets.charts import TrajectoryCharts
 from widgets.gauge import LinearGauge
 from widgets.live_feed import LiveFeedWidget
-from widgets.status_led import StatusLED
+from widgets.status_led import StatusLED, IndicatorsManager
 
 # dispatcher
 _ = getattr(dispatcher, "disconnect_all", None)
@@ -42,3 +42,4 @@ _ = getattr(StatusLED, "setStatus", None)
 _ = getattr(StatusLED, "getState", None)
 _ = getattr(StatusLED, "_alignment", None)
 _ = getattr(StatusLED, "_status_property", None)
+_ = getattr(IndicatorsManager, "set_all", None)
