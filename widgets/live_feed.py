@@ -39,9 +39,16 @@ Package: dashboardGUI.widgets
 """
 
 from __future__ import annotations
+import os
+import platform
 from PyQt6.QtWidgets import QLabel
-from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont
+from PyQt6.QtGui import QPixmap, QPainter, QColor
 from PyQt6.QtCore import Qt, QSize
+
+# Detect embedded/Raspberry Pi mode via env var or platform
+_embedded_env = os.getenv("DASHBOARD_EMBEDDED", "").lower()
+_is_arm = "arm" in platform.machine().lower() or "aarch" in platform.machine().lower()
+_EMBEDDED_MODE = (_embedded_env in ("1", "true", "yes")) or _is_arm
 
 
 class LiveFeedWidget(QLabel):
@@ -110,7 +117,7 @@ class LiveFeedWidget(QLabel):
         Returns:
             QSize: Preferred size (640x480 - standard VGA)
         """
-        return QSize(640, 480)
+        return QSize(480, 360) if _EMBEDDED_MODE else QSize(640, 480)
     
     def updateFrame(self, frame):
         """
@@ -226,10 +233,17 @@ class LiveFeedWidget(QLabel):
             painter = QPainter(self)
             
             # Scale frame to fit widget (maintain aspect ratio)
+            # Use fast (lower-quality) scaling on embedded targets
+            transform_mode = (
+                Qt.TransformationMode.FastTransformation
+                if _EMBEDDED_MODE
+                else Qt.TransformationMode.SmoothTransformation
+            )
+
             scaled_pixmap = self._current_frame.scaled(
                 self.size(),
                 Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
+                transform_mode,
             )
             
             # Center the scaled frame
@@ -257,7 +271,6 @@ if __name__ == "__main__":
     import sys
     from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton
     from PyQt6.QtGui import QImage
-    from PyQt6.QtCore import QTimer
     
     app = QApplication(sys.argv)
     

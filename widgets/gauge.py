@@ -59,9 +59,16 @@ Version: 2.0
 """
 
 from __future__ import annotations
+import os
+import platform
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QColor, QPen, QFont
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt
+
+# Embedded/Raspberry Pi detection
+_embedded_env = os.getenv("DASHBOARD_EMBEDDED", "").lower()
+_is_arm = "arm" in platform.machine().lower() or "aarch" in platform.machine().lower()
+_EMBEDDED = (_embedded_env in ("1", "true", "yes")) or _is_arm
 
 # ============================================================================
 # === COLOR CONSTANTS (Cached for Performance) ===
@@ -74,7 +81,7 @@ _COLOR_TICK = QColor("#777777")         # Medium gray ticks
 _COLOR_TEXT = QColor("#222222")         # Near-black text
 
 # Font cache (created once, reused for all gauges)
-_FONT_LABEL = QFont("Arial", 9)
+_FONT_LABEL = QFont("Arial", 9 if not _EMBEDDED else 8)
 
 
 class LinearGauge(QWidget):
@@ -132,8 +139,8 @@ class LinearGauge(QWidget):
         self._label = label
         
         # === Set minimum size ===
-        # 60px height ensures label, bar, and ticks are readable
-        self.setMinimumHeight(60)
+        # Use a slightly smaller minimum on embedded targets to save space
+        self.setMinimumHeight(60 if not _EMBEDDED else 48)
     
     def setValue(self, value: float):
         """
@@ -244,7 +251,9 @@ class LinearGauge(QWidget):
             • Font object cached globally
         """
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # Disable antialiasing on embedded targets for lower CPU use
+        if not _EMBEDDED:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # === Calculate gauge bar rectangle ===
         # Leave margins: 10px left/right, 10px top, 20px bottom (for ticks)
@@ -284,48 +293,4 @@ class LinearGauge(QWidget):
         )
 
 
-# ============================================================================
-# === MODULE TESTING ===
-# ============================================================================
-
-if __name__ == "__main__":
-    """
-    Standalone test for LinearGauge widget.
-    
-    Usage:
-        python widgets/gauge.py
-    """
-    import sys
-    from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout
-    from PyQt6.QtCore import QTimer
-    
-    app = QApplication(sys.argv)
-    
-    window = QWidget()
-    window.setWindowTitle("LinearGauge Test")
-    window.setStyleSheet("QWidget { background-color: #111; }")
-    layout = QVBoxLayout(window)
-    
-    # Create test gauges
-    cpu_gauge = LinearGauge(label="CPU %")
-    mem_gauge = LinearGauge(label="Memory %")
-    disk_gauge = LinearGauge(label="Disk %")
-    
-    layout.addWidget(cpu_gauge)
-    layout.addWidget(mem_gauge)
-    layout.addWidget(disk_gauge)
-    
-    # Animate gauges
-    import random
-    def update_gauges():
-        cpu_gauge.setValue(random.uniform(0, 100))
-        mem_gauge.setValue(random.uniform(0, 100))
-        disk_gauge.setValue(random.uniform(0, 100))
-    
-    timer = QTimer()
-    timer.timeout.connect(update_gauges)
-    timer.start(500)  # Update every 500ms
-    
-    window.resize(400, 300)
-    window.show()
-    sys.exit(app.exec())
+__all__ = ["LinearGauge"]

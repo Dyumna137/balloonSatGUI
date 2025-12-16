@@ -1,85 +1,24 @@
-"""
-TrajectoryCharts widget — altitude vs time visualization.
-===============================================================
-A custom PyQt6 widget that displays a single chart for BalloonSat
-altitude visualization over time.
+"""TrajectoryCharts widget — altitude vs time visualization.
 
-- Altitude vs Time: Shows expected vs actual altitude over time
-
-This widget uses PyQtGraph for high-performance real-time plotting with
-support for thousands of data points without performance degradation.
-===============================================================
-Changes from v2.0:
-UPDATED: Simplified to show only altitude chart (removed lat/lon map)
+A compact PyQt6 widget that displays a single altitude vs time plot
+using PyQtGraph. Designed for real-time plotting and optimized for
+embedded targets by batching updates and enabling downsampling/OpenGL
+acceleration when available.
 
 Features:
 - Single-chart display (altitude vs time)
-- Real-time data appending (100+ points/second)
+- Real-time data appending with efficient buffering
 - Expected vs actual trajectory comparison
 - Interactive zooming and panning
-- Legend for clear data identification
 - Optimized rendering for embedded systems
 
-Performance Characteristics:
-- Update rate: 100+ Hz for continuous data
-- Data capacity: 10,000+ points without slowdown
-- Memory usage: ~40 bytes per point (reduced from dual-chart)
-- CPU usage: <0.5% during continuous updates (reduced from ~1%)
-- Uses OpenGL acceleration when available
-
-Visual Design:
-- Expected trajectory: Blue dashed line
-- Actual trajectory: Orange solid line
-- Dark theme compatible
-- Clear axis labels and legend
-- Grid lines for reference
-
-Usage Examples:
-Basic usage::
-
-    charts = TrajectoryCharts()
-
-    point = SimpleNamespace(
-        t=0.0,
-        alt_expected=100.0,
-        alt_actual=99.5
-    )
-    charts.appendPoint(point)
-
-Batch loading::
-
-    charts = TrajectoryCharts()
-    for point in trajectory_data:
-        charts.appendPoint(point)
-
-Clear and reset::
-
-    charts.clear()
-
-Qt Designer promotion:
-- Base class: QWidget
-- Promoted class: TrajectoryCharts
-- Header file: widgets.charts
-
-Data Point Format:
-Point objects must have these attributes:
-- ``t`` (float): Time in seconds
-- ``alt_expected`` (float): Expected altitude in meters
-- ``alt_actual`` (float): Actual measured altitude in meters
-
-Optional attributes (ignored in single-chart mode):
-- ``lat`` (float): Latitude (no longer used)
-- ``lon`` (float): Longitude (no longer used)
-
-Version History:
-- v1.0 (2025-11-05): Initial dual-chart version (lat/lon + altitude)
-- v2.0 (2025-11-06): Comprehensive documentation and optimizations
-- v3.0 (2025-11-06): Simplified to single chart (altitude only)
-- v3.5 (2025-11-06): Improved variable naming and documentation.
+Notes:
+- Performance numbers depend on hardware; the widget focuses on
+  sensible defaults (batching, downsampling, OpenGL) rather than
+  hard guarantees.
 
 Author: Dyumna137
-Date: 2025-11-23 11:52:29 UTC
-Version: 3.5
+Date: 2025-11-23
 License: MIT
 """
 
@@ -87,9 +26,12 @@ from __future__ import annotations
 
 from typing import Any, List
 from datetime import datetime, timezone
+import os
+import platform
 
 import pyqtgraph as pg
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
+import PyQt6.QtGui as QtGui
 
 # ============================================================================
 # === CHART STYLING CONSTANTS ===
@@ -180,7 +122,6 @@ class TrajectoryCharts(QWidget):
         left.setTextPen("#222222")
 
         # Tick label font
-        import PyQt6.QtGui as QtGui
         tick_font = QtGui.QFont("Segoe UI", 10)
         bottom.setTickFont(tick_font)
         left.setTickFont(tick_font)
@@ -208,24 +149,25 @@ class TrajectoryCharts(QWidget):
         # Batch UI updates to reduce UI overhead. Charts will repaint
         # after collecting `_update_interval` points. Higher values
         # reduce repaint frequency and CPU usage on embedded devices.
-        # Default set to 5 for a good balance on low-power hardware.
-        self._update_interval: int = 5
+        # Default set based on environment (desktop vs embedded/RPi).
+        _embedded_env = os.getenv("DASHBOARD_EMBEDDED", "").lower()
+        _is_arm = "arm" in platform.machine().lower() or "aarch" in platform.machine().lower()
+        self._EMBEDDED = (_embedded_env in ("1", "true", "yes")) or _is_arm
+
+        # Conservative defaults for embedded targets
+        self._update_interval: int = 10 if self._EMBEDDED else 5
         self._pending_updates: int = 0
         # Base time for converting absolute timestamps to relative seconds
         self._base_time: float | None = None
         # Maximum number of points to keep in the buffers (rolling buffer)
         # Prevents unbounded memory growth during long runs.
-        # Prevents unbounded memory growth during long runs.
-        # Lower this default for Raspberry Pi-class hardware.
-        self._max_points: int = 5000
-        # Marker / symbol display settings
-        # Show small symbols for each data point when dataset is reasonably sized
-        self._show_markers: bool = True
-        # If more than this many points, markers are automatically disabled
-        # to avoid huge rendering cost. Lower default for embedded targets.
-        self._markers_threshold: int = 500
+        self._max_points: int = 1000 if self._EMBEDDED else 5000
+        # Marker / symbol display settings - disable on embedded by default
+        self._show_markers: bool = False if self._EMBEDDED else True
+        # Marker threshold (smaller for embedded)
+        self._markers_threshold: int | None = 200 if self._EMBEDDED else 500
         # Default marker size (smaller on embedded displays)
-        self._marker_size: int = 6
+        self._marker_size: int = 4 if self._EMBEDDED else 6
 
         # === Setup altitude plot ===
         # Altitude: single series (solid orange)
@@ -233,19 +175,20 @@ class TrajectoryCharts(QWidget):
 
         # Initialize curve with empty data and enable automatic downsampling
         # `downsampleMethod='mean'` preserves shapes for dense datasets when supported.
-        try:
-            self.curve_alt.setData([], [], autoDownsample=True, downsampleMethod='mean')
-        except TypeError:
-            # Older pyqtgraph versions may not support these kwargs; fall back
-            self.curve_alt.setData([], [])
+        # Assume a modern pyqtgraph; keep the optimized call simple.
+        self.curve_alt.setData([], [], autoDownsample=True, downsampleMethod='mean')
 
         # === Set axis labels ===
         self.alt_plot.setLabel("bottom", "Time", units="s")
         self.alt_plot.setLabel("left", "Altitude", units="m")
 
-        # === Enable antialiasing and OpenGL for smooth, accelerated lines ===
-        # Use OpenGL when available to accelerate large-data rendering
-        pg.setConfigOptions(antialias=True, useOpenGL=True)
+        # === Configure rendering options ===
+        # On embedded targets, prefer lower-quality but faster rendering to
+        # reduce CPU/GPU load and avoid running out of memory.
+        if self._EMBEDDED:
+            pg.setConfigOptions(antialias=False, useOpenGL=False)
+        else:
+            pg.setConfigOptions(antialias=True, useOpenGL=True)
 
         # === Set background color ===
         self.alt_plot.setBackground("#ffffff")
@@ -397,13 +340,12 @@ class TrajectoryCharts(QWidget):
                         symbolPen=pg.mkPen('#000000', width=1),
                     )
                 else:
-                    self.curve_alt.setData(self._t, self._alt, autoDownsample=True, downsampleMethod='mean')
+                    self.curve_alt.setData(
+                        self._t, self._alt, autoDownsample=True, downsampleMethod='mean'
+                    )
             except TypeError:
-                # Fallback for older pyqtgraph versions
-                if show_symbols:
-                    self.curve_alt.setData(self._t, self._alt)
-                else:
-                    self.curve_alt.setData(self._t, self._alt)
+                # Older pyqtgraph may not support extra kwargs; fall back to basic call
+                self.curve_alt.setData(self._t, self._alt)
             self._pending_updates = 0
 
     def clear(self):
@@ -428,17 +370,9 @@ class TrajectoryCharts(QWidget):
         self._t.clear()
         self._alt.clear()
 
-        # Reset pending update counter
-        try:
-            self._pending_updates = 0
-        except Exception:
-            pass
-
-        # Reset base time so subsequent plots start at t=0 again
-        try:
-            self._base_time = None
-        except Exception:
-            pass
+        # Reset pending update counter and base time
+        self._pending_updates = 0
+        self._base_time = None
 
         # Note: No lat/lon buffers to clear
 
@@ -522,102 +456,4 @@ class TrajectoryCharts(QWidget):
             >>> charts.setTitle("Flight #42 - Altitude Profile")
         """
         self.alt_plot.setTitle(title)
-
-    def enableAutoRange(self, enable: bool = True):
-        """
-        Enable or disable automatic range adjustment.
-
-        Args:
-            enable: True to enable auto-range, False to disable
-
-        Example:
-            >>> charts.enableAutoRange(True)  # Auto-scale to data
-        """
-        self.alt_plot.enableAutoRange(enable=enable)
-
-    def setYRange(self, min_alt: float, max_alt: float):
-        """
-        Set Y-axis (altitude) range manually.
-
-        Args:
-            min_alt: Minimum altitude in meters
-            max_alt: Maximum altitude in meters
-
-        Example:
-            >>> # Set range for expected flight envelope
-            >>> charts.setYRange(0, 30000)  # 0 to 30km
-        """
-        self.alt_plot.setYRange(min_alt, max_alt)
-
-    def setXRange(self, min_time: float, max_time: float):
-        """
-        Set X-axis (time) range manually.
-
-        Args:
-            min_time: Minimum time in seconds
-            max_time: Maximum time in seconds
-
-        Example:
-            >>> # Set range for 2-hour flight
-            >>> charts.setXRange(0, 7200)  # 0 to 2 hours
-        """
-        self.alt_plot.setXRange(min_time, max_time)
-
-
-# ============================================================================
-# === MODULE TESTING ===
-# ============================================================================
-
-if __name__ == "__main__":
-    """
-    Standalone test for TrajectoryCharts widget (single chart version).
-
-    Usage:
-        python widgets/charts.py
-    """
-    import math
-    import sys
-    from types import SimpleNamespace
-
-    from PyQt6.QtCore import QTimer
-    from PyQt6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-
-    charts = TrajectoryCharts()
-    charts.setWindowTitle("TrajectoryCharts Test - Altitude Only")
-    charts.resize(800, 600)
-    charts.show()
-
-    # Simulate trajectory data
-    t = [0.0]
-
-    def add_point():
-        """Add simulated trajectory point."""
-        t[0] += 0.1
-
-        # Simulate ascending balloon
-        point = SimpleNamespace(
-            t=t[0],
-            alt_expected=100 + t[0] * 2,  # Rising at 2 m/s
-            alt_actual=100 + t[0] * 2 + math.sin(t[0]) * 5,  # With oscillation
-        )
-        charts.appendPoint(point)
-
-    timer = QTimer()
-    timer.timeout.connect(add_point)
-    timer.start(100)  # Add point every 100ms
-
-    print("=" * 60)
-    print("TrajectoryCharts Test - Single Chart (Altitude Only)")
-    print("=" * 60)
-    print("✓ Single altitude chart displayed")
-    print("✓ Expected trajectory: Blue dashed line")
-    print("✓ Actual trajectory: Orange solid line")
-    print("✓ Real-time updates: 10 points/second")
-    print("=" * 60)
-    print("Watch the altitude increase over time.")
-    print("Close window to exit.")
-    print("=" * 60)
-
-    sys.exit(app.exec())
+__all__ = ["TrajectoryCharts"]

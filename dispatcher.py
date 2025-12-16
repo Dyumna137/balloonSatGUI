@@ -76,7 +76,7 @@ Version: 2.0
 
 from __future__ import annotations
 from PyQt6.QtCore import QObject, pyqtSignal
-from typing import Dict, Any
+from typing import Dict
 
 
 class Dispatcher(QObject):
@@ -314,7 +314,7 @@ if __name__ == "__main__":
     
     # Test telemetryUpdated signal
     def on_telemetry(data):
-        print(f"\n📊 Telemetry Updated:")
+        print("\n📊 Telemetry Updated:")
         for key, value in data.items():
             print(f"   {key}: {value}")
     
@@ -323,7 +323,7 @@ if __name__ == "__main__":
     
     # Test sensorStatusUpdated signal
     def on_sensor_status(status):
-        print(f"\n🔧 Sensor Status:")
+        print("\n🔧 Sensor Status:")
         for sensor, ok in status.items():
             symbol = "✓" if ok else "✗"
             print(f"   {symbol} {sensor}: {'OK' if ok else 'FAULT'}")
@@ -333,7 +333,7 @@ if __name__ == "__main__":
     
     # Test computerHealthUpdated signal
     def on_health(cpu, mem):
-        print(f"\n💻 Computer Health:")
+        print("\n💻 Computer Health:")
         print(f"   CPU: {cpu:.1f}%")
         print(f"   Memory: {mem:.1f}%")
     
@@ -344,7 +344,7 @@ if __name__ == "__main__":
     from types import SimpleNamespace
     
     def on_trajectory(point):
-        print(f"\n📍 Trajectory Point:")
+        print("\n📍 Trajectory Point:")
         print(f"   Time: {point.t}s")
         print(f"   Position: ({point.lat:.6f}, {point.lon:.6f})")
         print(f"   Altitude: {point.alt_actual}m (expected: {point.alt_expected}m)")
@@ -360,7 +360,7 @@ if __name__ == "__main__":
     dispatch.trajectoryAppended.emit(point)
     
     # Show connection info
-    print(f"\n📡 Signal Connections:")
+    print("\n📡 Signal Connections:")
     info = dispatch.get_signal_info()
     for signal_name, count in info.items():
         print(f"   {signal_name}: {count} connection(s)")

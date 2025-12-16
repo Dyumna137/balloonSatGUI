@@ -15,13 +15,11 @@ Version: 2.4.1 (Fixed)
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, 
-    QLabel, QMessageBox, QFileDialog
+    QLabel, QMessageBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QPixmap
 from pathlib import Path
 from datetime import datetime
-import os
 
 try:
     from widgets.live_feed import LiveFeedWidget
@@ -173,7 +171,7 @@ class ESP32CamWindow(QDialog):
         try:
             dispatch.frameReady.disconnect(self._on_frame_ready)
             print("  ✓ Disconnected from frameReady signal")
-        except:
+        except Exception:
             pass
     
     def _on_frame_ready(self, frame):
@@ -293,7 +291,7 @@ class ESP32CamWindow(QDialog):
                 name = file.stem  # balloonsat_20251107_154647_001
                 num_str = name.split('_')[-1]  # 001
                 numbers.append(int(num_str))
-            except:
+            except Exception:
                 pass
         
         return max(numbers, default=0) + 1
